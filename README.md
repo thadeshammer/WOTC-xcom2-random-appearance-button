@@ -1,2 +1,3 @@
 # xcom2-random-appearance-button
-Adds a button to the XCOM 2 soldier customization menu that creates a random look for the given soldier.
+
+This is an XCOM 2 mod. It adds two buttons to the soldier customization menu (both in the character pool and in-game) which create random looks for the given soldier.
