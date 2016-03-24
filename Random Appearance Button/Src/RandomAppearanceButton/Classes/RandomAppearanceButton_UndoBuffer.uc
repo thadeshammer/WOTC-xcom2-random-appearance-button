@@ -41,7 +41,7 @@ var array<AppearanceState> Buffer;
 
 var UICustomize_Menu CustomizeMenuScreen;
 
-const MAX_UNDO_BUFFER_SIZE = 5;
+const MAX_UNDO_BUFFER_SIZE = 10;
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -49,7 +49,7 @@ const MAX_UNDO_BUFFER_SIZE = 5;
 
 simulated function Init(UICustomize_Menu Screen)
 {
-	Buffer.Length = 0;
+	ClearTheBuffer();
 
 	CustomizeMenuScreen = Screen;
 
@@ -106,6 +106,11 @@ simulated function AppearanceState GetFrontOfBuffer()
 	return Buffer[Buffer.Length - 1];
 }
 
+simulated function ClearTheBuffer()
+{
+	Buffer.Length = 0;
+}
+
 simulated function StoreCurrentState()
 {
 	local AppearanceState	CurrentState;
@@ -142,12 +147,27 @@ simulated static function ApplyAppearanceStateSnapshot(UICustomize_Menu Screen, 
 
 	bSkipThisTrait = false;
 
+	/*
+		Gender needs to be applied FIRST, as ALL other indicies for props are
+		relative to gender.
+
+		Also, due to a discrepancy between the gender enum and all other enums
+		in the source, we need to -1 the stored value prior to applying it.
+		(Otherwise we always get a female no matter what.)
+	*/
+
+	class'RandomAppearanceButton'.static.ForceSetTrait(Screen, EUICustomizeCategory(eUICustomizeCat_Gender), 0, AppearanceSnapshot.Trait[eUICustomizeCat_Gender] - 1);
+	Screen.UpdateData();
+
 	for (iCategoryIndex = 0; iCategoryIndex <= eUICustomizeCat_MAX; iCategoryIndex++) {
 		switch (iCategoryIndex)
 		{
 			/*
 				Non-color appearance props and attributes require a "Direction"
 				of 0. I'm not clear on why but that's how they're handled.
+
+				Gender is included here too so the undo button doesn't persist
+				gendered prop indicies to the other gender, which gets weird.
 			*/
 			case eUICustomizeCat_Face:
 			case eUICustomizeCat_Hairstyle:
@@ -195,12 +215,12 @@ simulated static function ApplyAppearanceStateSnapshot(UICustomize_Menu Screen, 
 			*/
 			case eUICustomizeCat_FirstName:
 			case eUICustomizeCat_LastName:
+			case eUICustomizeCat_Gender:
 			case eUICustomizeCat_NickName:
 			case eUICustomizeCat_WeaponName:
 			case eUICustomizeCat_Personality:
 			case eUICustomizeCat_Country:
 			case eUICustomizeCat_Voice:
-			case eUICustomizeCat_Gender:
 			case eUICustomizeCat_Class:
 			case eUICustomizeCat_AllowTypeSoldier:
 			case eUICustomizeCat_AllowTypeVIP:
@@ -208,6 +228,7 @@ simulated static function ApplyAppearanceStateSnapshot(UICustomize_Menu Screen, 
 			case eUICustomizeCat_DEV1:
 			case eUICustomizeCat_DEV2:
 				bSkipThisTrait = true;
+				break;
 
 		}
 		

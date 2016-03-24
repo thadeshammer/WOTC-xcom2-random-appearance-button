@@ -43,6 +43,23 @@
 
 	BUGS.
 
+	UNDO VS GENDER
+
+	Undo doesn't toggle Gender (maybe it should) and I leveraged this to maintain
+	appearance across gender switches which can NEVER work consistently *because*
+	there isn't a one-to-one mapping of props between the genders (e.g. females
+	have more hairstyles than men, and the ones that match don't have matching
+	indicies). 
+	
+	Ways to fix this (favorite to least favorite):
+	* Toggle Gender adds a state to the buffer...this *might* work but could overfill
+	the buffer pretty quickly; might be a good reason to increase the buffer size.
+	* separate undo buffers for male/female;
+	* Toggle Gender button wipes the buffer (undesirable);
+	* do my best to map parts by name to their matches inspite of differing indicies
+	(ton of work, big pain, probably won't look like it works ever);
+	* just leave it as is (lazy, it seems broken this way).
+
 	When a color picker is activated (e.g. Eye Color, Hair color) vs. a prop picker
 	(e.g. Hairstyle, Face) the RandomAppearanceButton UI is not hidden as it should be;
 	does this mean we don't get Receive and Lose Focus events for color pickers?
@@ -283,7 +300,7 @@ simulated function CreateTheChecklist(/*UIScreen Screen*/)
 	ToggleOptionsVisibilityButton		= CreateButton(CustomizeMenuScreen, 'RandomAppearanceToggle',	"Toggle Options",		ToggleChecklistVisiblity,				class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -154, -165);
 
 	UndoButton							= CreateButton(CustomizeMenuScreen, 'UndoButton',				"Undo",					UndoAppearanceChanges,					class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -307, -165);
-	UndoButton.SetText(class'UIUtilities_Text'.static.GetColoredText("Undo", eUIState_Disabled, BUTTON_LABEL_FONTSIZE)); // The buffer starts empty.
+	UndoButtonGreyedOut(); // The buffer starts empty.
 
 	RandomAppearanceButton				= CreateButton(CustomizeMenuScreen, 'RandomAppearanceButton',	"Random Appearance",	GenerateNormalLookingRandomAppearance,	class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -207, -130);
 	TotallyRandomButton					= CreateButton(CustomizeMenuScreen, 'TotallyRandomButton',		"Totally Random", 		GenerateTotallyRandomAppearance,		class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -160, -95);
@@ -293,6 +310,7 @@ simulated function CreateTheChecklist(/*UIScreen Screen*/)
 	AnchorPos = class'UIUtilities'.const.ANCHOR_TOP_RIGHT;
 
 	ToggleGenderButton					= CreateButton(CustomizeMenuScreen, 'ToggleGender',				"Switch Gender",		ToggleGender,	AnchorPos, -234, CHECKBOX_OFFSET_Y - BUTTON_HEIGHT - BUTTON_SPACING); // xoffset prev -154
+	//ToggleGenderButton.SetDisabled(false, "Changing gender will clear the undo buffer.");
 	ToggleGenderButton.Hide();
 
 	CheckAllButton						= CreateButton(CustomizeMenuScreen, 'CheckAll',					"All",					CheckAll,		class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -154, -207);
@@ -581,15 +599,50 @@ simulated function ToggleGender(UIButton Button)
 		newGender = eGender_Female - 1;
 	}
 
-	AppearanceSnapshot = class'RandomAppearanceButton_UndoBuffer'.static.AppearanceStateSnapshot(CustomizeMenuScreen);
+	/*
+		NOTE The undo buffer gets all sorts of confused when it tries to track gender,
+		so for now it will just wipe the buffer clean to hit this button.
+	*/
+
+//	AppearanceSnapshot = class'RandomAppearanceButton_UndoBuffer'.static.AppearanceStateSnapshot(CustomizeMenuScreen);
 
 	//UICustomize_Menu(`SCREENSTACK.GetCurrentScreen()).CustomizeManager.OnCategoryValueChange(eUICustomizeCat_Gender, 0, newGender);
 	//UICustomize_Menu(`SCREENSTACK.GetCurrentScreen()).UpdateData();
 
+	StoreAppearanceStateInUndoBuffer();
+
 	ForceSetTrait(CustomizeMenuScreen, eUICustomizeCat_Gender, 0, newGender);
-	class'RandomAppearanceButton_UndoBuffer'.static.ApplyAppearanceStateSnapshot(CustomizeMenuScreen, AppearanceSnapshot);
+	//class'RandomAppearanceButton_UndoBuffer'.static.ApplyAppearanceStateSnapshot(CustomizeMenuScreen, AppearanceSnapshot);
+	
 	CustomizeMenuScreen.UpdateData(); // is this still necessary?
 
+	//UndoBuffer.ClearTheBuffer();
+	//UndoButtonGreyedOut();
+
+}
+
+simulated function StoreAppearanceStateInUndoBuffer()
+{
+	UndoBuffer.StoreCurrentState();
+	UndoButtonLitUp();
+}
+
+simulated function UndoButtonGreyedOut()
+{
+	local string strLabel;
+
+	strLabel = "Recall: 0";
+
+	UndoButton.SetText(class'UIUtilities_Text'.static.GetColoredText(strLabel, eUIState_Disabled, BUTTON_LABEL_FONTSIZE));
+}
+
+simulated function UndoButtonLitUp()
+{
+	local string strLabel;
+
+	strLabel = "Recall:" @ string(UndoBuffer.Buffer.Length);
+
+	UndoButton.SetText(class'UIUtilities_Text'.static.GetColoredText(strLabel, eUIState_Normal, BUTTON_LABEL_FONTSIZE));
 }
 
 simulated function CheckAll(UIButton Button)
@@ -724,8 +777,7 @@ simulated function GenerateTotallyRandomAppearance(UIButton Button)
 	`log("* * * * * * * * * * * * * * * * * * * * * * * * *");
 	`log("");
 	
-	UndoBuffer.StoreCurrentState();
-	UndoButton.SetText(class'UIUtilities_Text'.static.GetColoredText("Undo", eUIState_Normal, BUTTON_LABEL_FONTSIZE));
+	StoreAppearanceStateInUndoBuffer();
 
 	// Core customization menu
 	RandomizeTrait(SoldierAttribLocks.Face.bChecked,			eUICustomizeCat_Face,					0,	true);
@@ -871,8 +923,7 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 	`log("* * * * * * * * * * * * * * * * * * * * * * * * *");
 	`log("");
 
-	UndoBuffer.StoreCurrentState();
-	UndoButton.SetText(class'UIUtilities_Text'.static.GetColoredText("Undo", eUIState_Normal, BUTTON_LABEL_FONTSIZE));
+	StoreAppearanceStateInUndoBuffer();
 
 	/*
 		Basically need to clear any/all extended stuff (e.g. props) so the result here doesn't look like it's fixed
@@ -950,7 +1001,11 @@ simulated function UndoAppearanceChanges(UIButton Button)
 		UndoBuffer.Undo();
 
 	if (!UndoBuffer.CanUndo())
-		UndoButton.SetText(class'UIUtilities_Text'.static.GetColoredText("Undo", eUIState_Disabled, BUTTON_LABEL_FONTSIZE));
+		UndoButtonGreyedOut();
+	else
+		UndoButtonLitUp();
+
+	ResetTheCamera();
 }
 
 simulated function ResetAndConditionallyRandomizeTrait(EUICustomizeCategory Category, int iDirection, bool bIsTraitLocked, float ChanceToRandomize)
@@ -1009,8 +1064,6 @@ simulated function RandomizeTrait(bool bIsTraitLocked, EUICustomizeCategory eCat
 
 				break;
 		}
-		
-
 	
 		if (!bTotallyRandom) {
 			maxRange = GetMaxRangeForProp(eCategory);
