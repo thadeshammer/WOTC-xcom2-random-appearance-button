@@ -14,7 +14,15 @@
 
 	TODO.
 
-	Figure out how to access and set the new Anarchy's Children DLC deco slots.
+	Add an UNDO button with some amount of buffered choices. (Maybe five?)
+
+	The UNDO button should appear disabled when it is disabled.
+
+	Add a lot more configuration to the INI (e.g. allow all options to be assigned
+	their own % chance for both buttons, maybe even allow the buttons to be renamed
+	by the user which I'll need to at least cap at a certain length).
+
+	(DONE) Figure out how to access and set the new Anarchy's Children DLC deco slots.
 		(WONTFIX) There's a ValidatePartSelection() function which is intended to check against
 		a given torso...but I'm doing this via the UI instead of the part selector stuff
 		soooo...I may have to manually check or see things get super broken (or super
@@ -35,6 +43,16 @@
 
 	BUGS.
 
+	When a color picker is activated (e.g. Eye Color, Hair color) vs. a prop picker
+	(e.g. Hairstyle, Face) the RandomAppearanceButton UI is not hidden as it should be;
+	does this mean we don't get Receive and Lose Focus events for color pickers?
+		* Correct: the class receives TWO Lose Focus events when a prop picker comes
+		up and ZERO Lose Focus events when a Color picker comes up.
+		* At first glance it looks like any "fix" for this would be a roundabout hack;
+		for instance, I could write a listener that specifically watches for the color
+		picker and if it comes up, it could break encapsulation and force THIS class
+		to show/hide the UI as needed.
+
 	(FIXED) Tattoo color no longer randomized. Did they change how that's done? - YES
 	looks like they did; it takes Direction -1 instead of 0, so it's now in line with the
 	other colors and no longer the Weird One.
@@ -54,6 +72,7 @@
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 class RandomAppearanceButton extends UIScreenListener
+	dependson(RandomAppearanceButton_UndoBuffer)
 	config(RandomAppearanceButton);
 
 /*
@@ -177,7 +196,9 @@ var UICustomize_Menu	CustomizeMenuScreen;
 var UIPanel				BGBox;
 var UIButton			RandomAppearanceButton;
 var UIButton			TotallyRandomButton;
-var UIButton			RandomApperanceToggle;
+var UIButton			ToggleOptionsVisibilityButton;
+var bool				bToggleOptionsButtonVisible;
+var UIButton			UndoButton;
 var UIButton			ToggleGenderButton;
 var UIButton			CheckAllButton;
 var UIButton			UncheckAllButton;
@@ -185,6 +206,8 @@ var UIButton			UncheckAllButton;
 var UIText				AttribLocksTitle;
 var UIText				WearablesLocksTitle;
 var UIText				WearablesColorsLocksTitles;
+
+var RandomAppearanceButton_UndoBuffer	UndoBuffer;
 
 /*
 	Starting with the coords from the random nickname button mod.
@@ -207,6 +230,12 @@ const TITLE_OFFSET_X			= -290;
 // a generalized create button func, so...here it is again.
 delegate OnClickedDelegate(UIButton Button);
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+							UIScreenListener Callbacks
+
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 event OnInit(UIScreen Screen)
 {	
 	CustomizeMenuScreen = UICustomize_Menu(Screen);
@@ -216,6 +245,29 @@ event OnInit(UIScreen Screen)
 	RunDLCCheck();
 
 	CreateTheChecklist();
+
+	bToggleOptionsButtonVisible = false;
+
+	//Screen.Spawn(class'UIPanel', Screen);
+	//UndoBuffer = CustomizeMenuScreen.Spawn(class'RandomAppearance_UndoBuffer', CustomizeMenuScreen);
+	//UndoBuffer.Init(CustomizeMenuScreen);
+
+	UndoBuffer = New class'RandomAppearanceButton_UndoBuffer';
+	UndoBuffer.Init(CustomizeMenuScreen);
+}
+
+simulated function OnReceiveFocus(UIScreen Screen)
+{
+	`log("RandomAppearanceButton.OnReceiveFocus");
+
+	ShowUI();
+}
+
+simulated function OnLoseFocus(UIScreen Screen)
+{
+	`log("RandomAppearanceButton.OnLoseFocus");
+
+	HideUI();
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -228,9 +280,13 @@ simulated function CreateTheChecklist(/*UIScreen Screen*/)
 	local int					AnchorPos;
 	local int					DLCCheckboxYAdjust;
 	
-	RandomApperanceToggle				= CreateButton(CustomizeMenuScreen, 'RandomAppearanceToggle',	"Toggle Options",		ToggleChecklistVisiblity,				class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -154, -165);
+	ToggleOptionsVisibilityButton		= CreateButton(CustomizeMenuScreen, 'RandomAppearanceToggle',	"Toggle Options",		ToggleChecklistVisiblity,				class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -154, -165);
+
+	UndoButton							= CreateButton(CustomizeMenuScreen, 'UndoButton',				"Undo",					UndoAppearanceChanges,					class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -307, -165);
+	UndoButton.SetText(class'UIUtilities_Text'.static.GetColoredText("Undo", eUIState_Disabled, BUTTON_LABEL_FONTSIZE)); // The buffer starts empty.
+
 	RandomAppearanceButton				= CreateButton(CustomizeMenuScreen, 'RandomAppearanceButton',	"Random Appearance",	GenerateNormalLookingRandomAppearance,	class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -207, -130);
-	TotallyRandomButton					= CreateButton(CustomizeMenuScreen, 'TotallyRandomButton',		"Totally Random", 		GenerateTotallyRandomAppearance,				class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -160, -95);
+	TotallyRandomButton					= CreateButton(CustomizeMenuScreen, 'TotallyRandomButton',		"Totally Random", 		GenerateTotallyRandomAppearance,		class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -160, -95);
 
 	SpawnOptionsBG(CustomizeMenuScreen);
 
@@ -336,6 +392,11 @@ simulated function SpawnOptionsBG(UIScreen Screen)
 simulated function ToggleChecklistVisiblity(UIButton Button)
 {
 
+	/*
+		Note that the unused param is there because it needs to be in order
+		to fit the mold for a button callback function.
+	*/
+
 	BGBox.ToggleVisible();
 	ToggleGenderButton.ToggleVisible();
 
@@ -375,6 +436,125 @@ simulated function ToggleChecklistVisiblity(UIButton Button)
 
 	SoldierPropsLocks.RightArmUpper.ToggleVisible();
 	SoldierPropsLocks.RightArmLower.ToggleVisible();
+
+	if (bToggleOptionsButtonVisible) {
+		bToggleOptionsButtonVisible = false;
+	} else {
+		bToggleOptionsButtonVisible = true;
+	}
+
+}
+
+simulated function HideUI()
+{
+
+	if (bToggleOptionsButtonVisible) {
+
+		BGBox.Hide();
+		ToggleGenderButton.Hide();
+
+		AttribLocksTitle.Hide();
+		WearablesLocksTitle.Hide();
+		WearablesColorsLocksTitles.Hide();
+
+		SoldierAttribLocks.Face.Hide();
+		SoldierAttribLocks.Hair.Hide();
+		SoldierAttribLocks.FacialHair.Hide();
+		SoldierAttribLocks.HairColor.Hide();
+		SoldierAttribLocks.EyeColor.Hide();
+		SoldierAttribLocks.Race.Hide();
+		SoldierAttribLocks.SkinColor.Hide();
+		SoldierAttribLocks.MainColor.Hide();
+		SoldierAttribLocks.SecondaryColor.Hide();
+		SoldierAttribLocks.WeaponColor.Hide();
+
+		SoldierPropsLocks.UpperFace.Hide();
+		SoldierPropsLocks.LowerFace.Hide();
+		SoldierPropsLocks.Helmet.Hide();
+		SoldierPropsLocks.Arms.Hide();
+		SoldierPropsLocks.Torso.Hide();
+		SoldierPropsLocks.Legs.Hide();
+		SoldierPropsLocks.ArmorPattern.Hide();
+		SoldierPropsLocks.WeaponPattern.Hide();
+		SoldierPropsLocks.TattoosLeft.Hide();
+		SoldierPropsLocks.TattoosRight.Hide();
+		SoldierPropsLocks.TattoosColor.Hide();
+		SoldierPropsLocks.Scars.Hide();
+		SoldierPropsLocks.FacePaint.Hide();
+		CheckAllButton.Hide();
+		UncheckAllButton.Hide();
+
+		SoldierPropsLocks.LeftArmUpper.Hide();
+		SoldierPropsLocks.LeftArmLower.Hide();
+
+		SoldierPropsLocks.RightArmUpper.Hide();
+		SoldierPropsLocks.RightArmLower.Hide();
+	}
+
+	ToggleOptionsVisibilityButton.Hide();
+	RandomAppearanceButton.Hide();
+	TotallyRandomButton.Hide();
+	UndoButton.Hide();
+
+}
+
+simulated function ShowUI()
+{
+
+	/*
+		Since this func is called only on a Receive Focus event,
+		if the options panel was visible prior to calling this,
+		it should be visible again. (I.E. if the user had the
+		panel up, then clicked to edit eye color, then came back
+		to the root, they should see the options panel still.)
+	*/
+
+	if (bToggleOptionsButtonVisible) {
+		BGBox.Show();
+		ToggleGenderButton.Show();
+
+		AttribLocksTitle.Show();
+		WearablesLocksTitle.Show();
+		WearablesColorsLocksTitles.Show();
+
+		SoldierAttribLocks.Face.Show();
+		SoldierAttribLocks.Hair.Show();
+		SoldierAttribLocks.FacialHair.Show();
+		SoldierAttribLocks.HairColor.Show();
+		SoldierAttribLocks.EyeColor.Show();
+		SoldierAttribLocks.Race.Show();
+		SoldierAttribLocks.SkinColor.Show();
+		SoldierAttribLocks.MainColor.Show();
+		SoldierAttribLocks.SecondaryColor.Show();
+		SoldierAttribLocks.WeaponColor.Show();
+
+		SoldierPropsLocks.UpperFace.Show();
+		SoldierPropsLocks.LowerFace.Show();
+		SoldierPropsLocks.Helmet.Show();
+		SoldierPropsLocks.Arms.Show();
+		SoldierPropsLocks.Torso.Show();
+		SoldierPropsLocks.Legs.Show();
+		SoldierPropsLocks.ArmorPattern.Show();
+		SoldierPropsLocks.WeaponPattern.Show();
+		SoldierPropsLocks.TattoosLeft.Show();
+		SoldierPropsLocks.TattoosRight.Show();
+		SoldierPropsLocks.TattoosColor.Show();
+		SoldierPropsLocks.Scars.Show();
+		SoldierPropsLocks.FacePaint.Show();
+		CheckAllButton.Show();
+		UncheckAllButton.Show();
+
+		SoldierPropsLocks.LeftArmUpper.Show();
+		SoldierPropsLocks.LeftArmLower.Show();
+
+		SoldierPropsLocks.RightArmUpper.Show();
+		SoldierPropsLocks.RightArmLower.Show();
+	}
+
+	ToggleOptionsVisibilityButton.Show();
+	RandomAppearanceButton.Show();
+	TotallyRandomButton.Show();
+	UndoButton.Show();
 
 }
 
@@ -535,6 +715,9 @@ simulated function GenerateTotallyRandomAppearance(UIButton Button)
 	`log("");
 	`log("* * * * * * * * * * * * * * * * * * * * * * * * *");
 	`log("");
+	
+	UndoBuffer.StoreCurrentState();
+	UndoButton.SetText(class'UIUtilities_Text'.static.GetColoredText("Undo", eUIState_Normal, BUTTON_LABEL_FONTSIZE));
 
 	// Core customization menu
 	RandomizeTrait(SoldierAttribLocks.Face.bChecked,			eUICustomizeCat_Face,					0,	true);
@@ -680,6 +863,9 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 	`log("* * * * * * * * * * * * * * * * * * * * * * * * *");
 	`log("");
 
+	UndoBuffer.StoreCurrentState();
+	UndoButton.SetText(class'UIUtilities_Text'.static.GetColoredText("Undo", eUIState_Normal, BUTTON_LABEL_FONTSIZE));
+
 	/*
 		Basically need to clear any/all extended stuff (e.g. props) so the result here doesn't look like it's fixed
 		and weird.
@@ -745,6 +931,20 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 	}
 }
 
+simulated function UndoAppearanceChanges(UIButton Button)
+{
+	`log("Calling Undo.");
+
+	if (UndoBuffer == none)
+		`log("There is no UndoBuffer. :(");
+
+	if (UndoBuffer.CanUndo())
+		UndoBuffer.Undo();
+
+	if (!UndoBuffer.CanUndo())
+		UndoButton.SetText(class'UIUtilities_Text'.static.GetColoredText("Undo", eUIState_Disabled, BUTTON_LABEL_FONTSIZE));
+}
+
 simulated function ResetAndConditionallyRandomizeTrait(EUICustomizeCategory Trait, int Direction, bool bIsTraitLocked, float ChanceToRandomize)
 {
 	/*
@@ -757,7 +957,7 @@ simulated function ResetAndConditionallyRandomizeTrait(EUICustomizeCategory Trai
 	}
 }
 
-simulated function RandomizeTrait(bool bIsTraitLocked, EUICustomizeCategory eCategory, int Direction, 
+simulated function RandomizeTrait(bool bIsTraitLocked, EUICustomizeCategory eCategory, int iDirection, 
 									optional bool bTotallyRandom = false,
 									optional EForceDefaultColorFlags eForceDefaultColor = NotForced)
 {
@@ -772,7 +972,7 @@ simulated function RandomizeTrait(bool bIsTraitLocked, EUICustomizeCategory eCat
 
 	if (!bIsTraitLocked) {
 
-		switch (Direction) {
+		switch (iDirection) {
 			case 0:
 				options = CustomizeMenuScreen.CustomizeManager.GetCategoryList(eCategory);
 				maxOptions = options.Length;
@@ -822,10 +1022,51 @@ simulated function RandomizeTrait(bool bIsTraitLocked, EUICustomizeCategory eCat
 
 		*/
 
-		CustomizeMenuScreen.CustomizeManager.OnCategoryValueChange(eCategory, Direction, `SYNC_RAND(maxOptions));
-		CustomizeMenuScreen.CustomizeManager.UpdateCamera();
+		SetTrait(eCategory, iDirection, `SYNC_RAND(maxOptions), bIsTraitLocked);
+		ResetTheCamera();
+
 	} // endif (!bIsTraitLocked)
 }
+
+simulated static function ForceSetTrait(UICustomize_Menu Screen, EUICustomizeCategory eCategory, int iDirection, int iSetting)
+{
+	/*
+		OnCategoryValueChange, which is actually a callback	usually triggered
+		by UI interaction. Basically the game responds to my mod the same way
+		it responds to the user clicking on a given setting within a picker.
+	*/
+
+	Screen.CustomizeManager.OnCategoryValueChange(eCategory, iDirection, iSetting);
+	Screen.CustomizeManager.UpdateCamera();
+}
+
+simulated function SetTrait(EUICustomizeCategory eCategory, int iDirection, int iTraitIndex, bool bIsTraitLocked)
+{
+	if (!bIsTraitLocked) {
+		ForceSetTrait(CustomizeMenuScreen, eCategory, iDirection, iTraitIndex);
+	}
+}
+
+simulated static function int GetTrait(UICustomize_Menu Screen, EUICustomizeCategory eCategory)
+{
+	/*
+		Return the (relative) index for the given trait; used for the Undo feature.
+	*/
+
+	return Screen.CustomizeManager.GetCategoryIndex(eCategory);
+}
+
+simulated function ResetTheCamera()
+{
+	/*
+		Calling this with no args helps correct the camera, which
+		becomes weird (locked, zoomed) otherwise.
+	*/
+
+	CustomizeMenuScreen.CustomizeManager.UpdateCamera();
+}
+
+
 
 simulated function int GetMaxRangeForProp(EUICustomizeCategory eCategory)
 {
@@ -889,19 +1130,6 @@ simulated function int GetGender()
 	 return unit.kAppearance.iGender;
 }
 
-simulated function ForceTrait(int TraitIndex, EUICustomizeCategory eCategory, int Direction)
-{
-	CustomizeMenuScreen.CustomizeManager.OnCategoryValueChange(eCategory, direction, TraitIndex);
-	CustomizeMenuScreen.CustomizeManager.UpdateCamera();
-}
-
-simulated function SetTrait(int TraitIndex, EUICustomizeCategory eCategory, int Direction, bool bIsTraitLocked)
-{
-	if (!bIsTraitLocked) {
-		ForceTrait(TraitIndex, eCategory, Direction);
-	}
-}
-
 simulated function bool RandomizeOrNotBasedOnRoll(float Chance)
 {
 	if (`SYNC_FRAND() < Chance)
@@ -909,6 +1137,7 @@ simulated function bool RandomizeOrNotBasedOnRoll(float Chance)
 	else
 		return false;
 }
+
 
 simulated function RunDLCCheck()
 {
