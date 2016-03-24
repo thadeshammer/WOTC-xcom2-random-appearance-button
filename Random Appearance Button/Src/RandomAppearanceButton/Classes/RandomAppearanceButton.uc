@@ -16,6 +16,8 @@
 
 	Add an UNDO button with some amount of buffered choices. (Maybe five?)
 
+	The UNDO button should appear disabled when it is disabled.
+
 	Add a lot more configuration to the INI (e.g. allow all options to be assigned
 	their own % chance for both buttons, maybe even allow the buttons to be renamed
 	by the user which I'll need to at least cap at a certain length).
@@ -70,6 +72,7 @@
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 class RandomAppearanceButton extends UIScreenListener
+	dependson(RandomAppearanceButton_UndoBuffer)
 	config(RandomAppearanceButton);
 
 /*
@@ -195,6 +198,7 @@ var UIButton			RandomAppearanceButton;
 var UIButton			TotallyRandomButton;
 var UIButton			ToggleOptionsVisibilityButton;
 var bool				bToggleOptionsButtonVisible;
+var UIButton			UndoButton;
 var UIButton			ToggleGenderButton;
 var UIButton			CheckAllButton;
 var UIButton			UncheckAllButton;
@@ -202,6 +206,8 @@ var UIButton			UncheckAllButton;
 var UIText				AttribLocksTitle;
 var UIText				WearablesLocksTitle;
 var UIText				WearablesColorsLocksTitles;
+
+var RandomAppearanceButton_UndoBuffer	UndoBuffer;
 
 /*
 	Starting with the coords from the random nickname button mod.
@@ -241,6 +247,13 @@ event OnInit(UIScreen Screen)
 	CreateTheChecklist();
 
 	bToggleOptionsButtonVisible = false;
+
+	//Screen.Spawn(class'UIPanel', Screen);
+	//UndoBuffer = CustomizeMenuScreen.Spawn(class'RandomAppearance_UndoBuffer', CustomizeMenuScreen);
+	//UndoBuffer.Init(CustomizeMenuScreen);
+
+	UndoBuffer = New class'RandomAppearanceButton_UndoBuffer';
+	UndoBuffer.Init(CustomizeMenuScreen);
 }
 
 simulated function OnReceiveFocus(UIScreen Screen)
@@ -267,9 +280,10 @@ simulated function CreateTheChecklist(/*UIScreen Screen*/)
 	local int					AnchorPos;
 	local int					DLCCheckboxYAdjust;
 	
-	ToggleOptionsVisibilityButton				= CreateButton(CustomizeMenuScreen, 'RandomAppearanceToggle',	"Toggle Options",		ToggleChecklistVisiblity,				class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -154, -165);
+	ToggleOptionsVisibilityButton		= CreateButton(CustomizeMenuScreen, 'RandomAppearanceToggle',	"Toggle Options",		ToggleChecklistVisiblity,				class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -154, -165);
+	UndoButton							= CreateButton(CustomizeMenuScreen, 'UndoButton',				"Undo",					UndoAppearanceChanges,					class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -310, -165);
 	RandomAppearanceButton				= CreateButton(CustomizeMenuScreen, 'RandomAppearanceButton',	"Random Appearance",	GenerateNormalLookingRandomAppearance,	class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -207, -130);
-	TotallyRandomButton					= CreateButton(CustomizeMenuScreen, 'TotallyRandomButton',		"Totally Random", 		GenerateTotallyRandomAppearance,				class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -160, -95);
+	TotallyRandomButton					= CreateButton(CustomizeMenuScreen, 'TotallyRandomButton',		"Totally Random", 		GenerateTotallyRandomAppearance,		class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -160, -95);
 
 	SpawnOptionsBG(CustomizeMenuScreen);
 
@@ -696,6 +710,8 @@ simulated function GenerateTotallyRandomAppearance(UIButton Button)
 	`log("");
 	`log("* * * * * * * * * * * * * * * * * * * * * * * * *");
 	`log("");
+	
+	UndoBuffer.StoreCurrentState();
 
 	// Core customization menu
 	RandomizeTrait(SoldierAttribLocks.Face.bChecked,			eUICustomizeCat_Face,					0,	true);
@@ -841,6 +857,8 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 	`log("* * * * * * * * * * * * * * * * * * * * * * * * *");
 	`log("");
 
+	UndoBuffer.StoreCurrentState();
+
 	/*
 		Basically need to clear any/all extended stuff (e.g. props) so the result here doesn't look like it's fixed
 		and weird.
@@ -906,6 +924,17 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 	}
 }
 
+simulated function UndoAppearanceChanges(UIButton Button)
+{
+	`log("Calling Undo.");
+
+	if (UndoBuffer == none)
+		`log("There is no UndoBuffer. :(");
+
+	if (UndoBuffer.CanUndo())
+		UndoBuffer.Undo();
+}
+
 simulated function ResetAndConditionallyRandomizeTrait(EUICustomizeCategory Trait, int Direction, bool bIsTraitLocked, float ChanceToRandomize)
 {
 	/*
@@ -918,7 +947,7 @@ simulated function ResetAndConditionallyRandomizeTrait(EUICustomizeCategory Trai
 	}
 }
 
-simulated function RandomizeTrait(bool bIsTraitLocked, EUICustomizeCategory eCategory, int Direction, 
+simulated function RandomizeTrait(bool bIsTraitLocked, EUICustomizeCategory eCategory, int iDirection, 
 									optional bool bTotallyRandom = false,
 									optional EForceDefaultColorFlags eForceDefaultColor = NotForced)
 {
@@ -933,7 +962,7 @@ simulated function RandomizeTrait(bool bIsTraitLocked, EUICustomizeCategory eCat
 
 	if (!bIsTraitLocked) {
 
-		switch (Direction) {
+		switch (iDirection) {
 			case 0:
 				options = CustomizeMenuScreen.CustomizeManager.GetCategoryList(eCategory);
 				maxOptions = options.Length;
@@ -983,10 +1012,51 @@ simulated function RandomizeTrait(bool bIsTraitLocked, EUICustomizeCategory eCat
 
 		*/
 
-		CustomizeMenuScreen.CustomizeManager.OnCategoryValueChange(eCategory, Direction, `SYNC_RAND(maxOptions));
-		CustomizeMenuScreen.CustomizeManager.UpdateCamera();
+		SetTrait(eCategory, iDirection, `SYNC_RAND(maxOptions), bIsTraitLocked);
+		ResetTheCamera();
+
 	} // endif (!bIsTraitLocked)
 }
+
+simulated static function ForceSetTrait(UICustomize_Menu Screen, EUICustomizeCategory eCategory, int iDirection, int iSetting)
+{
+	/*
+		OnCategoryValueChange, which is actually a callback	usually triggered
+		by UI interaction. Basically the game responds to my mod the same way
+		it responds to the user clicking on a given setting within a picker.
+	*/
+
+	Screen.CustomizeManager.OnCategoryValueChange(eCategory, iDirection, iSetting);
+	Screen.CustomizeManager.UpdateCamera();
+}
+
+simulated function SetTrait(EUICustomizeCategory eCategory, int iDirection, int iTraitIndex, bool bIsTraitLocked)
+{
+	if (!bIsTraitLocked) {
+		ForceSetTrait(CustomizeMenuScreen, eCategory, iDirection, iTraitIndex);
+	}
+}
+
+simulated static function int GetTrait(UICustomize_Menu Screen, EUICustomizeCategory eCategory)
+{
+	/*
+		Return the (relative) index for the given trait; used for the Undo feature.
+	*/
+
+	return Screen.CustomizeManager.GetCategoryIndex(eCategory);
+}
+
+simulated function ResetTheCamera()
+{
+	/*
+		Calling this with no args helps correct the camera, which
+		becomes weird (locked, zoomed) otherwise.
+	*/
+
+	CustomizeMenuScreen.CustomizeManager.UpdateCamera();
+}
+
+
 
 simulated function int GetMaxRangeForProp(EUICustomizeCategory eCategory)
 {
@@ -1050,19 +1120,6 @@ simulated function int GetGender()
 	 return unit.kAppearance.iGender;
 }
 
-simulated function ForceTrait(int TraitIndex, EUICustomizeCategory eCategory, int Direction)
-{
-	CustomizeMenuScreen.CustomizeManager.OnCategoryValueChange(eCategory, direction, TraitIndex);
-	CustomizeMenuScreen.CustomizeManager.UpdateCamera();
-}
-
-simulated function SetTrait(int TraitIndex, EUICustomizeCategory eCategory, int Direction, bool bIsTraitLocked)
-{
-	if (!bIsTraitLocked) {
-		ForceTrait(TraitIndex, eCategory, Direction);
-	}
-}
-
 simulated function bool RandomizeOrNotBasedOnRoll(float Chance)
 {
 	if (`SYNC_FRAND() < Chance)
@@ -1070,6 +1127,7 @@ simulated function bool RandomizeOrNotBasedOnRoll(float Chance)
 	else
 		return false;
 }
+
 
 simulated function RunDLCCheck()
 {
