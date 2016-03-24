@@ -101,41 +101,44 @@ simulated function PopFrontOffTheBuffer()
 	Buffer.Remove(Buffer.Length - 1, 1);
 }
 
+simulated function AppearanceState GetFrontOfBuffer()
+{
+	return Buffer[Buffer.Length - 1];
+}
+
 simulated function StoreCurrentState()
 {
 	local AppearanceState	CurrentState;
-	local int				CategoryIndex;
 
 	/*
 		Iterate over all trait categories, get their current values, store them
 		into an AppearanceState struct, then push it onto the buffer.
-
-		eUICustomizeCat_RightArmDeco is currently the _MAX; noting that
-		here just incase this _MAX macro doesn't work (it should).
 	*/
 
 	`log("UNDO BUFFER: Storing current state.");
 
-	for (CategoryIndex = 0; CategoryIndex <= eUICustomizeCat_MAX; CategoryIndex++)
-		CurrentState.Trait[CategoryIndex] = class'RandomAppearanceButton'.static.GetTrait(CustomizeMenuScreen, EUICustomizeCategory(CategoryIndex));
-
+	CurrentState = AppearanceStateSnapshot(CustomizeMenuScreen);
 	PushOnToBuffer(CurrentState);
 
 	`log("UNDO BUFFER: Buffer size now" @ Buffer.Length);
 }
 
-simulated function bool Undo()
+simulated static function AppearanceState AppearanceStateSnapshot(UICustomize_Menu Screen)
+{
+	local AppearanceState	CurrentState;
+	local int				iCategoryIndex;
+
+	for (iCategoryIndex = 0; iCategoryIndex <= eUICustomizeCat_MAX; iCategoryIndex++)
+		CurrentState.Trait[iCategoryIndex] = class'RandomAppearanceButton'.static.GetTrait(Screen, EUICustomizeCategory(iCategoryIndex));
+
+	return CurrentState;
+}
+
+simulated static function ApplyAppearanceStateSnapshot(UICustomize_Menu Screen, AppearanceState AppearanceSnapshot)
 {
 	local int		iCategoryIndex;
 	local int		iDirection;
-	local int		iTraitIndexFromBuffer;
 	local bool		bSkipThisTrait;
-
-	`log("UNDO BUFFER: In Undo.");
-	`log("UNDO BUFFER: Buffer size now" @ Buffer.Length);
-
-	if (Buffer.Length == 0)
-		return false;
 
 	bSkipThisTrait = false;
 
@@ -210,11 +213,22 @@ simulated function bool Undo()
 		
 		//simulated static function ForceSetTrait(UICustomize_Menu Screen, EUICustomizeCategory eCategory, int iDirection, int iSetting)
 		if (!bSkipThisTrait) {
-			iTraitIndexFromBuffer = Buffer[Buffer.Length-1].Trait[iCategoryIndex];
-			class'RandomAppearanceButton'.static.ForceSetTrait(CustomizeMenuScreen, EUICustomizeCategory(iCategoryIndex), iDirection, iTraitIndexFromBuffer);
+			class'RandomAppearanceButton'.static.ForceSetTrait(Screen, EUICustomizeCategory(iCategoryIndex), iDirection, AppearanceSnapshot.Trait[iCategoryIndex]);
 		}
 
 	}
+}
+
+simulated function bool Undo()
+{
+	`log("UNDO BUFFER: In Undo.");
+	`log("UNDO BUFFER: Buffer size now" @ Buffer.Length);
+
+	if (Buffer.Length == 0)
+		return false;
+
+	//ApplyAppearanceStateSnapshot(CustomizeMenuScreen, Buffer[Buffer.Length - 1]);
+	ApplyAppearanceStateSnapshot(CustomizeMenuScreen, GetFrontOfBuffer());
 
 	// pop the recovered layer off of the buffer
 	PopFrontOffTheBuffer();

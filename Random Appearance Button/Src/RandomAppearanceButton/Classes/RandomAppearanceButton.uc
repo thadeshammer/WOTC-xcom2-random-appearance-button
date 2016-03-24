@@ -562,6 +562,7 @@ simulated function ToggleGender(UIButton Button)
 {
 	local int					newGender;
 	local XComGameState_Unit	Unit;
+	local AppearanceState		AppearanceSnapshot;
 
 	Unit = CustomizeMenuScreen.Movie.Pres.GetCustomizationUnit();
 
@@ -580,8 +581,15 @@ simulated function ToggleGender(UIButton Button)
 		newGender = eGender_Female - 1;
 	}
 
-	UICustomize_Menu(`SCREENSTACK.GetCurrentScreen()).CustomizeManager.OnCategoryValueChange(eUICustomizeCat_Gender, 0, newGender);
-	UICustomize_Menu(`SCREENSTACK.GetCurrentScreen()).UpdateData();
+	AppearanceSnapshot = class'RandomAppearanceButton_UndoBuffer'.static.AppearanceStateSnapshot(CustomizeMenuScreen);
+
+	//UICustomize_Menu(`SCREENSTACK.GetCurrentScreen()).CustomizeManager.OnCategoryValueChange(eUICustomizeCat_Gender, 0, newGender);
+	//UICustomize_Menu(`SCREENSTACK.GetCurrentScreen()).UpdateData();
+
+	ForceSetTrait(CustomizeMenuScreen, eUICustomizeCat_Gender, 0, newGender);
+	class'RandomAppearanceButton_UndoBuffer'.static.ApplyAppearanceStateSnapshot(CustomizeMenuScreen, AppearanceSnapshot);
+	CustomizeMenuScreen.UpdateData(); // is this still necessary?
+
 }
 
 simulated function CheckAll(UIButton Button)
@@ -945,15 +953,15 @@ simulated function UndoAppearanceChanges(UIButton Button)
 		UndoButton.SetText(class'UIUtilities_Text'.static.GetColoredText("Undo", eUIState_Disabled, BUTTON_LABEL_FONTSIZE));
 }
 
-simulated function ResetAndConditionallyRandomizeTrait(EUICustomizeCategory Trait, int Direction, bool bIsTraitLocked, float ChanceToRandomize)
+simulated function ResetAndConditionallyRandomizeTrait(EUICustomizeCategory Category, int iDirection, bool bIsTraitLocked, float ChanceToRandomize)
 {
 	/*
 		Reset the trait to 0 then, if we're supposed to randomize it, do so.
 	*/
 
-	SetTrait(0, Trait, Direction, bIsTraitLocked);
+	SetTrait(Category, iDirection, 0, bIsTraitLocked);
 	if (RandomizeOrNotBasedOnRoll(ChanceToRandomize)) {
-		RandomizeTrait(bIsTraitLocked, Trait, Direction);
+		RandomizeTrait(bIsTraitLocked, Category, iDirection);
 	}
 }
 
