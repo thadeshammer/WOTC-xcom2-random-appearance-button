@@ -281,7 +281,10 @@ simulated function CreateTheChecklist(/*UIScreen Screen*/)
 	local int					DLCCheckboxYAdjust;
 	
 	ToggleOptionsVisibilityButton		= CreateButton(CustomizeMenuScreen, 'RandomAppearanceToggle',	"Toggle Options",		ToggleChecklistVisiblity,				class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -154, -165);
-	UndoButton							= CreateButton(CustomizeMenuScreen, 'UndoButton',				"Undo",					UndoAppearanceChanges,					class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -310, -165);
+
+	UndoButton							= CreateButton(CustomizeMenuScreen, 'UndoButton',				"Undo",					UndoAppearanceChanges,					class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -307, -165);
+	UndoButton.SetText(class'UIUtilities_Text'.static.GetColoredText("Undo", eUIState_Disabled, BUTTON_LABEL_FONTSIZE)); // The buffer starts empty.
+
 	RandomAppearanceButton				= CreateButton(CustomizeMenuScreen, 'RandomAppearanceButton',	"Random Appearance",	GenerateNormalLookingRandomAppearance,	class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -207, -130);
 	TotallyRandomButton					= CreateButton(CustomizeMenuScreen, 'TotallyRandomButton',		"Totally Random", 		GenerateTotallyRandomAppearance,		class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -160, -95);
 
@@ -491,6 +494,7 @@ simulated function HideUI()
 	ToggleOptionsVisibilityButton.Hide();
 	RandomAppearanceButton.Hide();
 	TotallyRandomButton.Hide();
+	UndoButton.Hide();
 
 }
 
@@ -550,6 +554,7 @@ simulated function ShowUI()
 	ToggleOptionsVisibilityButton.Show();
 	RandomAppearanceButton.Show();
 	TotallyRandomButton.Show();
+	UndoButton.Show();
 
 }
 
@@ -712,6 +717,7 @@ simulated function GenerateTotallyRandomAppearance(UIButton Button)
 	`log("");
 	
 	UndoBuffer.StoreCurrentState();
+	UndoButton.SetText(class'UIUtilities_Text'.static.GetColoredText("Undo", eUIState_Normal, BUTTON_LABEL_FONTSIZE));
 
 	// Core customization menu
 	RandomizeTrait(SoldierAttribLocks.Face.bChecked,			eUICustomizeCat_Face,					0,	true);
@@ -858,6 +864,7 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 	`log("");
 
 	UndoBuffer.StoreCurrentState();
+	UndoButton.SetText(class'UIUtilities_Text'.static.GetColoredText("Undo", eUIState_Normal, BUTTON_LABEL_FONTSIZE));
 
 	/*
 		Basically need to clear any/all extended stuff (e.g. props) so the result here doesn't look like it's fixed
@@ -933,6 +940,9 @@ simulated function UndoAppearanceChanges(UIButton Button)
 
 	if (UndoBuffer.CanUndo())
 		UndoBuffer.Undo();
+
+	if (!UndoBuffer.CanUndo())
+		UndoButton.SetText(class'UIUtilities_Text'.static.GetColoredText("Undo", eUIState_Disabled, BUTTON_LABEL_FONTSIZE));
 }
 
 simulated function ResetAndConditionallyRandomizeTrait(EUICustomizeCategory Trait, int Direction, bool bIsTraitLocked, float ChanceToRandomize)
