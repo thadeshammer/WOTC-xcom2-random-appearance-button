@@ -139,7 +139,7 @@ simulated static function AppearanceState AppearanceStateSnapshot(UICustomize_Me
 	return CurrentState;
 }
 
-simulated static function ApplyAppearanceStateSnapshot(UICustomize_Menu Screen, AppearanceState AppearanceSnapshot)
+simulated static function ApplyAppearanceStateSnapshot(UICustomize_Menu Screen, AppearanceState AppearanceSnapshot/*, const out SoldierPropsLock PropCheckboxes*/)
 {
 	local int		iCategoryIndex;
 	local int		iDirection;
@@ -154,10 +154,18 @@ simulated static function ApplyAppearanceStateSnapshot(UICustomize_Menu Screen, 
 		Also, due to a discrepancy between the gender enum and all other enums
 		in the source, we need to -1 the stored value prior to applying it.
 		(Otherwise we always get a female no matter what.)
+
+		Note that if Gender is changed, a prop is locked, then  Undo is clicked,
+		if the given prop isn't shared across genders, things can get weird. :\
+		Not sure how to address this yet. Other than going with "Toggle Gender
+		kills the buffer" so I'll go that path for now.
 	*/
 
-	class'RandomAppearanceButton'.static.ForceSetTrait(Screen, EUICustomizeCategory(eUICustomizeCat_Gender), 0, AppearanceSnapshot.Trait[eUICustomizeCat_Gender] - 1);
-	Screen.UpdateData();
+	/*
+
+		class'RandomAppearanceButton'.static.ForceSetTrait(Screen, EUICustomizeCategory(eUICustomizeCat_Gender), 0, AppearanceSnapshot.Trait[eUICustomizeCat_Gender] - 1);
+		Screen.UpdateData();
+	*/
 
 	for (iCategoryIndex = 0; iCategoryIndex <= eUICustomizeCat_MAX; iCategoryIndex++) {
 		switch (iCategoryIndex)

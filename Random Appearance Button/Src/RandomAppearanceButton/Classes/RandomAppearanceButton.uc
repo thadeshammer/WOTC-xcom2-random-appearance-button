@@ -131,33 +131,18 @@ enum EForceDefaultColorFlags {
 	EyeColors
 };
 
-struct SoldierAttribLock {
-	var UICheckBox Face;
-	var UICheckBox Hair;
-	var UICheckBox FacialHair;
-	var UICheckBox HairColor;
-	var UICheckBox EyeColor;
-	var UICheckBox Race;
-	var UICheckBox SkinColor;
-	var UICheckBox MainColor;
-	var UICheckBox SecondaryColor;
-	var UICheckBox WeaponColor;
-
-	structdefaultproperties {
-		Face				= none;
-		Hair				= none;
-		FacialHair			= none;
-		HairColor			= none;
-		EyeColor			= none;
-		Race				= none;
-		SkinColor			= none;
-		MainColor			= none;
-		SecondaryColor		= none;
-		WeaponColor			= none;
-	}
-};
-
 struct SoldierPropsLock {
+	var UICheckBox		Face;
+	var UICheckBox		Hair;
+	var UICheckBox		FacialHair;
+	var UICheckBox		HairColor;
+	var UICheckBox		EyeColor;
+	var UICheckBox		Race;
+	var UICheckBox		SkinColor;
+	var UICheckBox		MainColor;
+	var UICheckBox		SecondaryColor;
+	var UICheckBox		WeaponColor;
+
 	var UICheckBox		UpperFace;
 	var UICheckBox		LowerFace;
 	var UICheckBox		Helmet;
@@ -165,8 +150,6 @@ struct SoldierPropsLock {
 	var UICheckBox		Torso;
 	var UICheckBox		Legs;
 	var UICheckBox		ArmorPattern;
-	var UICheckBox		WeaponName;
-	var UICheckBox		WeaponColor;
 	var UICheckBox		WeaponPattern;
 	var UICheckBox		TattoosLeft;
 	var UICheckBox		TattoosRight;
@@ -177,32 +160,8 @@ struct SoldierPropsLock {
 	var UICheckBox		LeftArmLower;
 	var UICheckBox		RightArmUpper;
 	var UICheckBox		RightArmLower;
-
-	structdefaultproperties {
-		UpperFace		= none;
-		LowerFace		= none;
-		Helmet			= none;
-		Arms			= none;
-		Torso			= none;
-		Legs			= none;
-		ArmorPattern	= none;
-		WeaponName		= none;
-		WeaponColor		= none;
-		WeaponPattern	= none;
-		TattoosLeft		= none;
-		TattoosRight	= none;
-		TattoosColor	= none;
-		Scars			= none;
-		FacePaint		= none;
-		LeftArmUpper	= none;
-		LeftArmLower	= none;
-		RightArmUpper	= none;
-		RightArmLower	= none;
-	}
 };
 
-
-var SoldierAttribLock	SoldierAttribLocks;
 var SoldierPropsLock	SoldierPropsLocks;
 
 const DLC_1_STR = "DLC_1";
@@ -310,7 +269,7 @@ simulated function CreateTheChecklist(/*UIScreen Screen*/)
 	AnchorPos = class'UIUtilities'.const.ANCHOR_TOP_RIGHT;
 
 	ToggleGenderButton					= CreateButton(CustomizeMenuScreen, 'ToggleGender',				"Switch Gender",		ToggleGender,	AnchorPos, -234, CHECKBOX_OFFSET_Y - BUTTON_HEIGHT - BUTTON_SPACING); // xoffset prev -154
-	//ToggleGenderButton.SetDisabled(false, "Changing gender will clear the undo buffer.");
+	ToggleGenderButton.SetDisabled(false, "Changing gender will clear the undo buffer.");
 	ToggleGenderButton.Hide();
 
 	CheckAllButton						= CreateButton(CustomizeMenuScreen, 'CheckAll',					"All",					CheckAll,		class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -154, -207);
@@ -321,21 +280,21 @@ simulated function CreateTheChecklist(/*UIScreen Screen*/)
 
 	AttribLocksTitle					= CreateTextBox(CustomizeMenuScreen,	'AttribLocksHeader',	"Lock Body Attributes",	AnchorPos, TITLE_OFFSET_X + 40, CHECKBOX_OFFSET_Y);
 
-	SoldierAttribLocks.Race				= CreateCheckbox(CustomizeMenuScreen,	'Checkbox_Race',		"Race/Skin Color",		AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, PanelYShiftDownFrom(AttribLocksTitle));
-	SoldierAttribLocks.SkinColor		= CreateCheckbox(CustomizeMenuScreen,	'Checkbox_SkinColor',	"",						AnchorPos, CHECKBOX_OFFSET_X, SoldierAttribLocks.Race.Y);
+	SoldierPropsLocks.Race				= CreateCheckbox(CustomizeMenuScreen,	'Checkbox_Race',		"Race/Skin Color",		AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, PanelYShiftDownFrom(AttribLocksTitle));
+	SoldierPropsLocks.SkinColor		= CreateCheckbox(CustomizeMenuScreen,	'Checkbox_SkinColor',	"",						AnchorPos, CHECKBOX_OFFSET_X, SoldierPropsLocks.Race.Y);
 
-	SoldierAttribLocks.Face				= CreateCheckbox(CustomizeMenuScreen,	'Checkbox_Face',		"Face/Beard",			AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, PanelYShiftDownFrom(SoldierAttribLocks.Race));
-	SoldierAttribLocks.FacialHair		= CreateCheckbox(CustomizeMenuScreen,	'Checkbox_FacialHair',	"",						AnchorPos, CHECKBOX_OFFSET_X, SoldierAttribLocks.Face.Y);
+	SoldierPropsLocks.Face				= CreateCheckbox(CustomizeMenuScreen,	'Checkbox_Face',		"Face/Beard",			AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, PanelYShiftDownFrom(SoldierPropsLocks.Race));
+	SoldierPropsLocks.FacialHair		= CreateCheckbox(CustomizeMenuScreen,	'Checkbox_FacialHair',	"",						AnchorPos, CHECKBOX_OFFSET_X, SoldierPropsLocks.Face.Y);
 
-	SoldierPropsLocks.FacePaint			= CreateCheckbox(CustomizeMenuScreen,	'Checkbox_FacePaint',	"Paint/Scars",			AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, PanelYShiftDownFrom(SoldierAttribLocks.Face));
+	SoldierPropsLocks.FacePaint			= CreateCheckbox(CustomizeMenuScreen,	'Checkbox_FacePaint',	"Paint/Scars",			AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, PanelYShiftDownFrom(SoldierPropsLocks.Face));
 	SoldierPropsLocks.Scars				= CreateCheckbox(CustomizeMenuScreen,	'Checkbox_Scars',		"",						AnchorPos, CHECKBOX_OFFSET_X, SoldierPropsLocks.FacePaint.Y);
 
-	SoldierAttribLocks.Hair				= CreateCheckbox(CustomizeMenuScreen,	'Checkbox_Hair',		"Hair/Color",			AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, PanelYShiftDownFrom(SoldierPropsLocks.FacePaint));
-	SoldierAttribLocks.HairColor		= CreateCheckbox(CustomizeMenuScreen,	'Checkbox_HairColor',	"",						AnchorPos, CHECKBOX_OFFSET_X, SoldierAttribLocks.Hair.Y);
+	SoldierPropsLocks.Hair				= CreateCheckbox(CustomizeMenuScreen,	'Checkbox_Hair',		"Hair/Color",			AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, PanelYShiftDownFrom(SoldierPropsLocks.FacePaint));
+	SoldierPropsLocks.HairColor		= CreateCheckbox(CustomizeMenuScreen,	'Checkbox_HairColor',	"",						AnchorPos, CHECKBOX_OFFSET_X, SoldierPropsLocks.Hair.Y);
 
-	SoldierAttribLocks.EyeColor			= CreateCheckbox(CustomizeMenuScreen,	'Checkbox_EyeColor',	"Eye Color",			AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, PanelYShiftDownFrom(SoldierAttribLocks.Hair));
+	SoldierPropsLocks.EyeColor			= CreateCheckbox(CustomizeMenuScreen,	'Checkbox_EyeColor',	"Eye Color",			AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, PanelYShiftDownFrom(SoldierPropsLocks.Hair));
 
-	SoldierPropsLocks.TattoosLeft		= CreateCheckbox(CustomizeMenuScreen,	'Checkbox_LeftTattoo',	"Tattoos: L/R",			AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, PanelYShiftDownFrom(SoldierAttribLocks.EyeColor));
+	SoldierPropsLocks.TattoosLeft		= CreateCheckbox(CustomizeMenuScreen,	'Checkbox_LeftTattoo',	"Tattoos: L/R",			AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, PanelYShiftDownFrom(SoldierPropsLocks.EyeColor));
 	SoldierPropsLocks.TattoosRight		= CreateCheckbox(CustomizeMenuScreen,	'Checkbox_RightTattoo',	"",						AnchorPos, CHECKBOX_OFFSET_X, SoldierPropsLocks.TattoosLeft.Y);
 	SoldierPropsLocks.TattoosColor		= CreateCheckbox(CustomizeMenuScreen,	'Checkbox_TattooColor',	"Tattoo Color",			AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, PanelYShiftDownFrom(SoldierPropsLocks.TattoosLeft));
 	
@@ -380,11 +339,11 @@ simulated function CreateTheChecklist(/*UIScreen Screen*/)
 	WearablesColorsLocksTitles			= CreateTextBox(CustomizeMenuScreen,  'WearablesColorsHeader',	"Lock Patterns & Colors", AnchorPos, TITLE_OFFSET_X + 30, PanelYShiftDownFrom(SoldierPropsLocks.Legs));
 
 	SoldierPropsLocks.ArmorPattern		= CreateCheckbox(CustomizeMenuScreen, 'Checkbox_ArmorPattern',	"Armor Pattern",		AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, PanelYShiftDownFrom(WearablesColorsLocksTitles));
-	SoldierAttribLocks.MainColor		= CreateCheckbox(CustomizeMenuScreen, 'Checkbox_MainColor',		"Armor Color 1/2",		AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, PanelYShiftDownFrom(SoldierPropsLocks.ArmorPattern));
-	SoldierAttribLocks.SecondaryColor	= CreateCheckbox(CustomizeMenuScreen, 'Checkbox_SecondaryColor',"",						AnchorPos, CHECKBOX_OFFSET_X, SoldierAttribLocks.MainColor.Y);
+	SoldierPropsLocks.MainColor		= CreateCheckbox(CustomizeMenuScreen, 'Checkbox_MainColor',		"Armor Color 1/2",		AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, PanelYShiftDownFrom(SoldierPropsLocks.ArmorPattern));
+	SoldierPropsLocks.SecondaryColor	= CreateCheckbox(CustomizeMenuScreen, 'Checkbox_SecondaryColor',"",						AnchorPos, CHECKBOX_OFFSET_X, SoldierPropsLocks.MainColor.Y);
 
-	SoldierPropsLocks.WeaponPattern		= CreateCheckbox(CustomizeMenuScreen, 'Checkbox_WeaponPattern',	"Weapon Pattern",		AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, PanelYShiftDownFrom(SoldierAttribLocks.MainColor));	
-	SoldierAttribLocks.WeaponColor		= CreateCheckbox(CustomizeMenuScreen, 'Checkbox_WeaponColor',	"Weapon Color",			AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, PanelYShiftDownFrom(SoldierPropsLocks.WeaponPattern));
+	SoldierPropsLocks.WeaponPattern		= CreateCheckbox(CustomizeMenuScreen, 'Checkbox_WeaponPattern',	"Weapon Pattern",		AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, PanelYShiftDownFrom(SoldierPropsLocks.MainColor));	
+	SoldierPropsLocks.WeaponColor		= CreateCheckbox(CustomizeMenuScreen, 'Checkbox_WeaponColor',	"Weapon Color",			AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, PanelYShiftDownFrom(SoldierPropsLocks.WeaponPattern));
 
 }
 
@@ -413,6 +372,9 @@ simulated function ToggleChecklistVisiblity(UIButton Button)
 	/*
 		Note that the unused param is there because it needs to be in order
 		to fit the mold for a button callback function.
+
+		This method only hides/unhides the checklist on the
+		button being pressed.
 	*/
 
 	BGBox.ToggleVisible();
@@ -422,16 +384,16 @@ simulated function ToggleChecklistVisiblity(UIButton Button)
 	WearablesLocksTitle.ToggleVisible();
 	WearablesColorsLocksTitles.ToggleVisible();
 
-	SoldierAttribLocks.Face.ToggleVisible();
-	SoldierAttribLocks.Hair.ToggleVisible();
-	SoldierAttribLocks.FacialHair.ToggleVisible();
-	SoldierAttribLocks.HairColor.ToggleVisible();
-	SoldierAttribLocks.EyeColor.ToggleVisible();
-	SoldierAttribLocks.Race.ToggleVisible();
-	SoldierAttribLocks.SkinColor.ToggleVisible();
-	SoldierAttribLocks.MainColor.ToggleVisible();
-	SoldierAttribLocks.SecondaryColor.ToggleVisible();
-	SoldierAttribLocks.WeaponColor.ToggleVisible();
+	SoldierPropsLocks.Face.ToggleVisible();
+	SoldierPropsLocks.Hair.ToggleVisible();
+	SoldierPropsLocks.FacialHair.ToggleVisible();
+	SoldierPropsLocks.HairColor.ToggleVisible();
+	SoldierPropsLocks.EyeColor.ToggleVisible();
+	SoldierPropsLocks.Race.ToggleVisible();
+	SoldierPropsLocks.SkinColor.ToggleVisible();
+	SoldierPropsLocks.MainColor.ToggleVisible();
+	SoldierPropsLocks.SecondaryColor.ToggleVisible();
+	SoldierPropsLocks.WeaponColor.ToggleVisible();
 
 	SoldierPropsLocks.UpperFace.ToggleVisible();
 	SoldierPropsLocks.LowerFace.ToggleVisible();
@@ -466,6 +428,10 @@ simulated function ToggleChecklistVisiblity(UIButton Button)
 simulated function HideUI()
 {
 
+	/*
+		Hides the mod's UI when losing focus.
+	*/
+
 	if (bToggleOptionsButtonVisible) {
 
 		BGBox.Hide();
@@ -475,16 +441,16 @@ simulated function HideUI()
 		WearablesLocksTitle.Hide();
 		WearablesColorsLocksTitles.Hide();
 
-		SoldierAttribLocks.Face.Hide();
-		SoldierAttribLocks.Hair.Hide();
-		SoldierAttribLocks.FacialHair.Hide();
-		SoldierAttribLocks.HairColor.Hide();
-		SoldierAttribLocks.EyeColor.Hide();
-		SoldierAttribLocks.Race.Hide();
-		SoldierAttribLocks.SkinColor.Hide();
-		SoldierAttribLocks.MainColor.Hide();
-		SoldierAttribLocks.SecondaryColor.Hide();
-		SoldierAttribLocks.WeaponColor.Hide();
+		SoldierPropsLocks.Face.Hide();
+		SoldierPropsLocks.Hair.Hide();
+		SoldierPropsLocks.FacialHair.Hide();
+		SoldierPropsLocks.HairColor.Hide();
+		SoldierPropsLocks.EyeColor.Hide();
+		SoldierPropsLocks.Race.Hide();
+		SoldierPropsLocks.SkinColor.Hide();
+		SoldierPropsLocks.MainColor.Hide();
+		SoldierPropsLocks.SecondaryColor.Hide();
+		SoldierPropsLocks.WeaponColor.Hide();
 
 		SoldierPropsLocks.UpperFace.Hide();
 		SoldierPropsLocks.LowerFace.Hide();
@@ -525,6 +491,8 @@ simulated function ShowUI()
 		it should be visible again. (I.E. if the user had the
 		panel up, then clicked to edit eye color, then came back
 		to the root, they should see the options panel still.)
+
+		It's a bug right now but it doesn't work for colors. :(
 	*/
 
 	if (bToggleOptionsButtonVisible) {
@@ -535,16 +503,16 @@ simulated function ShowUI()
 		WearablesLocksTitle.Show();
 		WearablesColorsLocksTitles.Show();
 
-		SoldierAttribLocks.Face.Show();
-		SoldierAttribLocks.Hair.Show();
-		SoldierAttribLocks.FacialHair.Show();
-		SoldierAttribLocks.HairColor.Show();
-		SoldierAttribLocks.EyeColor.Show();
-		SoldierAttribLocks.Race.Show();
-		SoldierAttribLocks.SkinColor.Show();
-		SoldierAttribLocks.MainColor.Show();
-		SoldierAttribLocks.SecondaryColor.Show();
-		SoldierAttribLocks.WeaponColor.Show();
+		SoldierPropsLocks.Face.Show();
+		SoldierPropsLocks.Hair.Show();
+		SoldierPropsLocks.FacialHair.Show();
+		SoldierPropsLocks.HairColor.Show();
+		SoldierPropsLocks.EyeColor.Show();
+		SoldierPropsLocks.Race.Show();
+		SoldierPropsLocks.SkinColor.Show();
+		SoldierPropsLocks.MainColor.Show();
+		SoldierPropsLocks.SecondaryColor.Show();
+		SoldierPropsLocks.WeaponColor.Show();
 
 		SoldierPropsLocks.UpperFace.Show();
 		SoldierPropsLocks.LowerFace.Show();
@@ -604,21 +572,13 @@ simulated function ToggleGender(UIButton Button)
 		so for now it will just wipe the buffer clean to hit this button.
 	*/
 
-//	AppearanceSnapshot = class'RandomAppearanceButton_UndoBuffer'.static.AppearanceStateSnapshot(CustomizeMenuScreen);
+	//StoreAppearanceStateInUndoBuffer();
 
-	//UICustomize_Menu(`SCREENSTACK.GetCurrentScreen()).CustomizeManager.OnCategoryValueChange(eUICustomizeCat_Gender, 0, newGender);
-	//UICustomize_Menu(`SCREENSTACK.GetCurrentScreen()).UpdateData();
+	ForceSetTrait(CustomizeMenuScreen, eUICustomizeCat_Gender, 0, newGender);	
+	CustomizeMenuScreen.UpdateData(); // If I don't do this, things can get weird.
 
-	StoreAppearanceStateInUndoBuffer();
-
-	ForceSetTrait(CustomizeMenuScreen, eUICustomizeCat_Gender, 0, newGender);
-	//class'RandomAppearanceButton_UndoBuffer'.static.ApplyAppearanceStateSnapshot(CustomizeMenuScreen, AppearanceSnapshot);
-	
-	CustomizeMenuScreen.UpdateData(); // is this still necessary?
-
-	//UndoBuffer.ClearTheBuffer();
-	//UndoButtonGreyedOut();
-
+	UndoBuffer.ClearTheBuffer();
+	UndoButtonGreyedOut();
 }
 
 simulated function StoreAppearanceStateInUndoBuffer()
@@ -648,16 +608,16 @@ simulated function UndoButtonLitUp()
 simulated function CheckAll(UIButton Button)
 {
 	
-	SoldierAttribLocks.Face.SetChecked(true);
-	SoldierAttribLocks.Hair.SetChecked(true);
-	SoldierAttribLocks.FacialHair.SetChecked(true);
-	SoldierAttribLocks.HairColor.SetChecked(true);
-	SoldierAttribLocks.EyeColor.SetChecked(true);
-	SoldierAttribLocks.Race.SetChecked(true);
-	SoldierAttribLocks.SkinColor.SetChecked(true);
-	SoldierAttribLocks.MainColor.SetChecked(true);
-	SoldierAttribLocks.SecondaryColor.SetChecked(true);
-	SoldierAttribLocks.WeaponColor.SetChecked(true);
+	SoldierPropsLocks.Face.SetChecked(true);
+	SoldierPropsLocks.Hair.SetChecked(true);
+	SoldierPropsLocks.FacialHair.SetChecked(true);
+	SoldierPropsLocks.HairColor.SetChecked(true);
+	SoldierPropsLocks.EyeColor.SetChecked(true);
+	SoldierPropsLocks.Race.SetChecked(true);
+	SoldierPropsLocks.SkinColor.SetChecked(true);
+	SoldierPropsLocks.MainColor.SetChecked(true);
+	SoldierPropsLocks.SecondaryColor.SetChecked(true);
+	SoldierPropsLocks.WeaponColor.SetChecked(true);
 
 	SoldierPropsLocks.UpperFace.SetChecked(true);
 	SoldierPropsLocks.LowerFace.SetChecked(true);
@@ -683,16 +643,16 @@ simulated function CheckAll(UIButton Button)
 simulated function UncheckAll(UIButton Button)
 {
 
-	SoldierAttribLocks.Face.SetChecked(false);
-	SoldierAttribLocks.Hair.SetChecked(false);
-	SoldierAttribLocks.FacialHair.SetChecked(false);
-	SoldierAttribLocks.HairColor.SetChecked(false);
-	SoldierAttribLocks.EyeColor.SetChecked(false);
-	SoldierAttribLocks.Race.SetChecked(false);
-	SoldierAttribLocks.SkinColor.SetChecked(false);
-	SoldierAttribLocks.MainColor.SetChecked(false);
-	SoldierAttribLocks.SecondaryColor.SetChecked(false);
-	SoldierAttribLocks.WeaponColor.SetChecked(false);
+	SoldierPropsLocks.Face.SetChecked(false);
+	SoldierPropsLocks.Hair.SetChecked(false);
+	SoldierPropsLocks.FacialHair.SetChecked(false);
+	SoldierPropsLocks.HairColor.SetChecked(false);
+	SoldierPropsLocks.EyeColor.SetChecked(false);
+	SoldierPropsLocks.Race.SetChecked(false);
+	SoldierPropsLocks.SkinColor.SetChecked(false);
+	SoldierPropsLocks.MainColor.SetChecked(false);
+	SoldierPropsLocks.SecondaryColor.SetChecked(false);
+	SoldierPropsLocks.WeaponColor.SetChecked(false);
 
 	SoldierPropsLocks.UpperFace.SetChecked(false);
 	SoldierPropsLocks.LowerFace.SetChecked(false);
@@ -780,16 +740,16 @@ simulated function GenerateTotallyRandomAppearance(UIButton Button)
 	StoreAppearanceStateInUndoBuffer();
 
 	// Core customization menu
-	RandomizeTrait(SoldierAttribLocks.Face.bChecked,			eUICustomizeCat_Face,					0,	true);
-	RandomizeTrait(SoldierAttribLocks.Hair.bChecked,			eUICustomizeCat_Hairstyle,				0,	true);
-	RandomizeTrait(SoldierAttribLocks.FacialHair.bChecked,		eUICustomizeCat_FacialHair,				0,	true);
-	RandomizeTrait(SoldierAttribLocks.HairColor.bChecked,		eUICustomizeCat_HairColor,				-1, true);
-	RandomizeTrait(SoldierAttribLocks.EyeColor.bChecked,		eUICustomizeCat_EyeColor,				-1, true);
-	RandomizeTrait(SoldierAttribLocks.Race.bChecked,			eUICustomizeCat_Race,					0,	true);
-	RandomizeTrait(SoldierAttribLocks.SkinColor.bChecked,		eUICustomizeCat_Skin,					-1, true);
-	RandomizeTrait(SoldierAttribLocks.MainColor.bChecked,		eUICustomizeCat_PrimaryArmorColor,		-1, true);
-	RandomizeTrait(SoldierAttribLocks.SecondaryColor.bChecked,	eUICustomizeCat_SecondaryArmorColor,	-1, true);
-	RandomizeTrait(SoldierAttribLocks.WeaponColor.bChecked,		eUICustomizeCat_WeaponColor,			-1, true);
+	RandomizeTrait(SoldierPropsLocks.Face.bChecked,			eUICustomizeCat_Face,					0,	true);
+	RandomizeTrait(SoldierPropsLocks.Hair.bChecked,			eUICustomizeCat_Hairstyle,				0,	true);
+	RandomizeTrait(SoldierPropsLocks.FacialHair.bChecked,		eUICustomizeCat_FacialHair,				0,	true);
+	RandomizeTrait(SoldierPropsLocks.HairColor.bChecked,		eUICustomizeCat_HairColor,				-1, true);
+	RandomizeTrait(SoldierPropsLocks.EyeColor.bChecked,		eUICustomizeCat_EyeColor,				-1, true);
+	RandomizeTrait(SoldierPropsLocks.Race.bChecked,			eUICustomizeCat_Race,					0,	true);
+	RandomizeTrait(SoldierPropsLocks.SkinColor.bChecked,		eUICustomizeCat_Skin,					-1, true);
+	RandomizeTrait(SoldierPropsLocks.MainColor.bChecked,		eUICustomizeCat_PrimaryArmorColor,		-1, true);
+	RandomizeTrait(SoldierPropsLocks.SecondaryColor.bChecked,	eUICustomizeCat_SecondaryArmorColor,	-1, true);
+	RandomizeTrait(SoldierPropsLocks.WeaponColor.bChecked,		eUICustomizeCat_WeaponColor,			-1, true);
 
 	// customize props menu
 	RandomizeTrait(SoldierPropsLocks.UpperFace.bChecked,		eUICustomizeCat_FaceDecorationUpper,	0,	true);
@@ -934,11 +894,11 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 	*/
 
 	// For Sure do these.
-	RandomizeTrait(SoldierAttribLocks.Face.bChecked,			eUICustomizeCat_Face,		0);
-	RandomizeTrait(SoldierAttribLocks.Hair.bChecked,			eUICustomizeCat_Hairstyle,	0);
+	RandomizeTrait(SoldierPropsLocks.Face.bChecked,			eUICustomizeCat_Face,		0);
+	RandomizeTrait(SoldierPropsLocks.Hair.bChecked,			eUICustomizeCat_Hairstyle,	0);
 		
-	RandomizeTrait(SoldierAttribLocks.Race.bChecked,			eUICustomizeCat_Race,		0);
-	RandomizeTrait(SoldierAttribLocks.SkinColor.bChecked,		eUICustomizeCat_Skin,		-1);
+	RandomizeTrait(SoldierPropsLocks.Race.bChecked,			eUICustomizeCat_Race,		0);
+	RandomizeTrait(SoldierPropsLocks.SkinColor.bChecked,		eUICustomizeCat_Skin,		-1);
 
 	RandomizeTrait(SoldierPropsLocks.Arms.bChecked,				eUICustomizeCat_Arms,		0);
 	RandomizeTrait(SoldierPropsLocks.Torso.bChecked,			eUICustomizeCat_Torso,		0);
@@ -950,7 +910,7 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 		Optionals per the game's default soldier generator: facial hair and decorations, hat.
 		Optionals per me: armor and weapon patterns, tattoos, scars, face paint.
 	*/
-	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_FacialHair,				0, SoldierAttribLocks.FacialHair.bChecked,		RABConf_BeardChance);
+	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_FacialHair,				0, SoldierPropsLocks.FacialHair.bChecked,		RABConf_BeardChance);
 	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_FaceDecorationUpper,	0, SoldierPropsLocks.UpperFace.bChecked,		RABConf_UpperFacePropChance);
 	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_FaceDecorationLower,	0, SoldierPropsLocks.LowerFace.bChecked,		RABConf_LowerFacePropChance);
 	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_Helmet,					0, SoldierPropsLocks.Helmet.bChecked,			RABConf_HatChance);
@@ -974,19 +934,19 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 	*/
 	if (RABConf_ForceDefaultColors)
 	{
-		RandomizeTrait(SoldierAttribLocks.HairColor.bChecked,		eUICustomizeCat_HairColor,				-1, false, EForceDefaultColorFlags.HairColors);
-		RandomizeTrait(SoldierAttribLocks.MainColor.bChecked,		eUICustomizeCat_PrimaryArmorColor,		-1, false, EForceDefaultColorFlags.ArmorColors);
-		RandomizeTrait(SoldierAttribLocks.SecondaryColor.bChecked,	eUICustomizeCat_SecondaryArmorColor,	-1, false, EForceDefaultColorFlags.ArmorColors);
-		RandomizeTrait(SoldierAttribLocks.WeaponColor.bChecked,		eUICustomizeCat_WeaponColor,			-1, false, EForceDefaultColorFlags.WeaponColors);
-		RandomizeTrait(SoldierAttribLocks.EyeColor.bChecked,		eUICustomizeCat_EyeColor,				-1, false, EForceDefaultColorFlags.EyeColors);
+		RandomizeTrait(SoldierPropsLocks.HairColor.bChecked,		eUICustomizeCat_HairColor,				-1, false, EForceDefaultColorFlags.HairColors);
+		RandomizeTrait(SoldierPropsLocks.MainColor.bChecked,		eUICustomizeCat_PrimaryArmorColor,		-1, false, EForceDefaultColorFlags.ArmorColors);
+		RandomizeTrait(SoldierPropsLocks.SecondaryColor.bChecked,	eUICustomizeCat_SecondaryArmorColor,	-1, false, EForceDefaultColorFlags.ArmorColors);
+		RandomizeTrait(SoldierPropsLocks.WeaponColor.bChecked,		eUICustomizeCat_WeaponColor,			-1, false, EForceDefaultColorFlags.WeaponColors);
+		RandomizeTrait(SoldierPropsLocks.EyeColor.bChecked,			eUICustomizeCat_EyeColor,				-1, false, EForceDefaultColorFlags.EyeColors);
 	}
 	else
 	{
-		RandomizeTrait(SoldierAttribLocks.HairColor.bChecked,		eUICustomizeCat_HairColor,				-1);
-		RandomizeTrait(SoldierAttribLocks.MainColor.bChecked,		eUICustomizeCat_PrimaryArmorColor,		-1);
-		RandomizeTrait(SoldierAttribLocks.SecondaryColor.bChecked,	eUICustomizeCat_SecondaryArmorColor,	-1);
-		RandomizeTrait(SoldierAttribLocks.WeaponColor.bChecked,		eUICustomizeCat_WeaponColor,			-1);
-		RandomizeTrait(SoldierAttribLocks.EyeColor.bChecked,		eUICustomizeCat_EyeColor,				-1);
+		RandomizeTrait(SoldierPropsLocks.HairColor.bChecked,		eUICustomizeCat_HairColor,				-1);
+		RandomizeTrait(SoldierPropsLocks.MainColor.bChecked,		eUICustomizeCat_PrimaryArmorColor,		-1);
+		RandomizeTrait(SoldierPropsLocks.SecondaryColor.bChecked,	eUICustomizeCat_SecondaryArmorColor,	-1);
+		RandomizeTrait(SoldierPropsLocks.WeaponColor.bChecked,		eUICustomizeCat_WeaponColor,			-1);
+		RandomizeTrait(SoldierPropsLocks.EyeColor.bChecked,			eUICustomizeCat_EyeColor,				-1);
 	}
 }
 
