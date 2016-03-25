@@ -28,7 +28,8 @@
 	The Undo button needs to grey-out when it won't work.
 */
 
-class RandomAppearanceButton_UndoBuffer extends Object;
+class RandomAppearanceButton_UndoBuffer extends Object
+	dependson(RandomAppearanceButton_Utilities);
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -47,7 +48,7 @@ const MAX_UNDO_BUFFER_SIZE = 10;
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-simulated function Init(UICustomize_Menu Screen)
+simulated function Init(const out UICustomize_Menu Screen)
 {
 	ClearTheBuffer();
 
@@ -82,7 +83,7 @@ simulated function bool CanUndo()
 	return !BufferIsEmpty();
 }
 
-simulated function PushOnToBuffer(AppearanceState StateToStore)
+simulated function PushOnToBuffer(const out AppearanceState StateToStore)
 {
 	if (Buffer.Length == MAX_UNDO_BUFFER_SIZE) {
 		PopBackOffTheBuffer();
@@ -91,14 +92,25 @@ simulated function PushOnToBuffer(AppearanceState StateToStore)
 	Buffer.AddItem(StateToStore);
 }
 
-simulated function PopBackOffTheBuffer()
+simulated function AppearanceState PopBackOffTheBuffer()
 {
+	local AppearanceState Back;
+
+	Back = Buffer[0];
+
 	Buffer.Remove(0, 1);
+
+	return Back;
 }
 
-simulated function PopFrontOffTheBuffer()
+simulated function AppearanceState PopFrontOffTheBuffer()
 {
+	local AppearanceState Front;
+
+	Front = Buffer[Buffer.Length - 1];
 	Buffer.Remove(Buffer.Length - 1, 1);
+
+	return Front;
 }
 
 simulated function AppearanceState GetFrontOfBuffer()
@@ -114,6 +126,7 @@ simulated function ClearTheBuffer()
 simulated function StoreCurrentState()
 {
 	local AppearanceState	CurrentState;
+	local AppearanceState	BufferFront;
 
 	/*
 		Iterate over all trait categories, get their current values, store them
@@ -123,12 +136,35 @@ simulated function StoreCurrentState()
 	`log("UNDO BUFFER: Storing current state.");
 
 	CurrentState = AppearanceStateSnapshot(CustomizeMenuScreen);
-	PushOnToBuffer(CurrentState);
+	BufferFront = GetFrontOfBuffer();
+
+
+	/*
+		We only want to store the current state if it's NOT identical to the
+		one already at the front of the buffer.
+		
+		If they're different, store it.
+
+		If there's an identical state already on the buffer, we don't want to
+		duplicate, so we just ignore this.
+
+		This provides support for cases where the user's changed the soldier's
+		appearance with the normal UI and wants our UNDO button to do what
+		you'd expect it to do.
+	*/
+
+	if ( !CompareAppearanceStates( CurrentState, BufferFront) ) {
+		`log("UNDO BUFFER: Current state isn't at the front of the buffer; storing it.");
+		PushOnToBuffer(CurrentState);
+	} else {
+		`log("UNDO BUFFER: CurrentState matches BufferFront, NOT STORING.");
+	}
 
 	`log("UNDO BUFFER: Buffer size now" @ Buffer.Length);
 }
 
-simulated static function AppearanceState AppearanceStateSnapshot(UICustomize_Menu Screen)
+
+simulated static function AppearanceState AppearanceStateSnapshot(const out UICustomize_Menu Screen)
 {
 	local AppearanceState	CurrentState;
 	local int				iCategoryIndex;
@@ -139,7 +175,45 @@ simulated static function AppearanceState AppearanceStateSnapshot(UICustomize_Me
 	return CurrentState;
 }
 
-simulated static function ApplyAppearanceStateSnapshot(UICustomize_Menu Screen, AppearanceState AppearanceSnapshot/*, const out SoldierPropsLock PropCheckboxes*/)
+
+simulated static function bool CompareAppearanceStates(const out AppearanceState left, const out AppearanceState right)
+{
+	local int iCategoryIndex;
+
+	/*
+		Iterate over all traits, compare the ones we care about; if any of them are changed,
+		return false; otherwise return true.
+
+		NOTE: UE3 doesn't support operator overloading as far as I can tell.
+	*/
+
+	`log("UNDO BUFFER: in CompareAppearanceStates");
+
+	for (iCategoryIndex = 0; iCategoryIndex <= eUICustomizeCat_MAX; iCategoryIndex++){
+		switch( class'RandomAppearanceButton_Utilities'.static.GetCategoryType(iCategoryIndex) ) {
+			case eCategoryType_Prop:
+			case eCategoryType_Color:
+			case eCategoryType_Gender:
+				if (left.Trait[iCategoryIndex] != right.Trait[iCategoryIndex]) {
+					`log("UNDO BUFFER: Compare" @ string(iCategoryIndex) @ "NO MATCH:");
+					return false;
+				} else {
+					`log("UNDO BUFFER: Compare" @ string(iCategoryIndex) @ "match");
+				}
+				break;
+
+			case eCategoryType_IGNORE:
+			case eCategoryType_UNKNOWN:
+			default:
+				`log("UNDO BUFFER: Compare" @ string(iCategoryIndex) @ "ignored/unknown");
+				break;
+		}
+	}
+
+	return true;
+}
+
+simulated static function ApplyAppearanceStateSnapshot(const out UICustomize_Menu Screen, const out AppearanceState AppearanceSnapshot/*, const out SoldierPropsLock PropCheckboxes*/)
 {
 	local int		iCategoryIndex;
 	local int		iDirection;
@@ -161,42 +235,17 @@ simulated static function ApplyAppearanceStateSnapshot(UICustomize_Menu Screen, 
 		kills the buffer" so I'll go that path for now.
 	*/
 
-	/*
-
-		class'RandomAppearanceButton'.static.ForceSetTrait(Screen, EUICustomizeCategory(eUICustomizeCat_Gender), 0, AppearanceSnapshot.Trait[eUICustomizeCat_Gender] - 1);
-		Screen.UpdateData();
-	*/
+	class'RandomAppearanceButton'.static.ForceSetTrait(Screen, EUICustomizeCategory(eUICustomizeCat_Gender), 0, AppearanceSnapshot.Trait[eUICustomizeCat_Gender] - 1);
+	Screen.UpdateData();	
 
 	for (iCategoryIndex = 0; iCategoryIndex <= eUICustomizeCat_MAX; iCategoryIndex++) {
-		switch (iCategoryIndex)
+		switch (class'RandomAppearanceButton_Utilities'.static.GetCategoryType(iCategoryIndex))
 		{
 			/*
 				Non-color appearance props and attributes require a "Direction"
 				of 0. I'm not clear on why but that's how they're handled.
-
-				Gender is included here too so the undo button doesn't persist
-				gendered prop indicies to the other gender, which gets weird.
 			*/
-			case eUICustomizeCat_Face:
-			case eUICustomizeCat_Hairstyle:
-			case eUICustomizeCat_Race:
-			case eUICustomizeCat_Arms:
-			case eUICustomizeCat_Torso:
-			case eUICustomizeCat_Legs:
-			case eUICustomizeCat_FacialHair:
-			case eUICustomizeCat_FaceDecorationUpper:
-			case eUICustomizeCat_FaceDecorationLower:
-			case eUICustomizeCat_Helmet:
-			case eUICustomizeCat_ArmorPatterns:
-			case eUICustomizeCat_WeaponPatterns:
-			case eUICustomizeCat_Scars:
-			case eUICustomizeCat_FacePaint:
-			case eUICustomizeCat_LeftArmTattoos:
-			case eUICustomizeCat_RightArmTattoos:
-			case eUICustomizeCat_LeftArmDeco:
-			case eUICustomizeCat_RightArmDeco:
-			case eUICustomizeCat_LeftArm:
-			case eUICustomizeCat_RightArm:
+			case eCategoryType_Prop:
 				bSkipThisTrait = false;
 				iDirection = 0;
 				break;
@@ -204,12 +253,7 @@ simulated static function ApplyAppearanceStateSnapshot(UICustomize_Menu Screen, 
 			/*
 				Colors require a "Direction" of -1.
 			*/
-			case eUICustomizeCat_HairColor:
-			case eUICustomizeCat_EyeColor:
-			case eUICustomizeCat_PrimaryArmorColor:
-			case eUICustomizeCat_SecondaryArmorColor:
-			case eUICustomizeCat_WeaponColor:
-			case eUICustomizeCat_TattooColor:
+			case eCategoryType_Color:
 				bSkipThisTrait = false;
 				iDirection = -1;
 				break;
@@ -220,27 +264,17 @@ simulated static function ApplyAppearanceStateSnapshot(UICustomize_Menu Screen, 
 				soldier's gender to female and assigning it whatever outfit the male would've
 				received upon Undo click. I can definitely use this with the switch gender
 				button.)
+
+				Note that gender's special handling is taken care of before this loop.
 			*/
-			case eUICustomizeCat_FirstName:
-			case eUICustomizeCat_LastName:
-			case eUICustomizeCat_Gender:
-			case eUICustomizeCat_NickName:
-			case eUICustomizeCat_WeaponName:
-			case eUICustomizeCat_Personality:
-			case eUICustomizeCat_Country:
-			case eUICustomizeCat_Voice:
-			case eUICustomizeCat_Class:
-			case eUICustomizeCat_AllowTypeSoldier:
-			case eUICustomizeCat_AllowTypeVIP:
-			case eUICustomizeCat_AllowTypeDarkVIP:
-			case eUICustomizeCat_DEV1:
-			case eUICustomizeCat_DEV2:
+			case eCategoryType_IGNORE:
+			case eCategoryType_UNKNOWN:
+			case eCategoryType_Gender:
 				bSkipThisTrait = true;
 				break;
 
 		}
 		
-		//simulated static function ForceSetTrait(UICustomize_Menu Screen, EUICustomizeCategory eCategory, int iDirection, int iSetting)
 		if (!bSkipThisTrait) {
 			class'RandomAppearanceButton'.static.ForceSetTrait(Screen, EUICustomizeCategory(iCategoryIndex), iDirection, AppearanceSnapshot.Trait[iCategoryIndex]);
 		}
@@ -250,17 +284,55 @@ simulated static function ApplyAppearanceStateSnapshot(UICustomize_Menu Screen, 
 
 simulated function bool Undo()
 {
+	local AppearanceState		CurrentAppearance;
+	local AppearanceState		BufferFront;
+
 	`log("UNDO BUFFER: In Undo.");
 	`log("UNDO BUFFER: Buffer size now" @ Buffer.Length);
 
 	if (Buffer.Length == 0)
 		return false;
 
-	//ApplyAppearanceStateSnapshot(CustomizeMenuScreen, Buffer[Buffer.Length - 1]);
-	ApplyAppearanceStateSnapshot(CustomizeMenuScreen, GetFrontOfBuffer());
+	/*
+		If there have been state changes since the last snapshot, that means
+		the user has made tweaks via the normal UI; in that case, UNDO should
+		rollback to the top-level state without popping it off of the buffer.
 
-	// pop the recovered layer off of the buffer
-	PopFrontOffTheBuffer();
+		If there haven't been state changes since the last snapshot (i.e.
+		the current state and the snapshot are identical) then we rollback
+		to the previous snapshot and pop.
+
+		Consider this situation:
+		(1) There are TWO states on the buffer after two appearance gen clicks.
+		(Uppercase reflects TRACKED/in the buffer).
+
+		[A][B]
+
+		(2) The user has changed the hair color manually, so we have a THIRD 
+		UNTRACKED state (lower case reflects untracked/not in the buffer).
+
+		[c]
+
+		FIRST UNDO CLICK wants to get back to [B], so we apply & keep state
+		[B], since [B] != [c].
+
+		SECOND UNDO CLICK wants to get back to [A], so we dump [B] then
+		apply [A].
+	*/
+
+	// local references to conform to further const out params in calls.
+	CurrentAppearance = AppearanceStateSnapshot(CustomizeMenuScreen);
+	BufferFront = GetFrontOfBuffer();
+
+	if ( CompareAppearanceStates(CurrentAppearance, BufferFront) ) {
+		// No state changes: dump *then* apply.
+		PopFrontOffTheBuffer(); // This state is already applied and we want to UNDO it.
+		BufferFront = GetFrontOfBuffer();
+		ApplyAppearanceStateSnapshot(CustomizeMenuScreen, BufferFront);
+	} else {
+		// Nothing to pop as the thing we want to replace isn't in the buffer.
+		ApplyAppearanceStateSnapshot(CustomizeMenuScreen, BufferFront);
+	}
 
 	`log("UNDO BUFFER: Buffer size now" @ Buffer.Length);
 

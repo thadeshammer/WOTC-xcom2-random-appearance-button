@@ -555,7 +555,7 @@ simulated function ToggleGender(UIButton Button)
 {
 	local int					newGender;
 	local XComGameState_Unit	Unit;
-	local AppearanceState		AppearanceSnapshot;
+	//local AppearanceState		AppearanceSnapshot;
 
 	Unit = CustomizeMenuScreen.Movie.Pres.GetCustomizationUnit();
 
@@ -575,17 +575,19 @@ simulated function ToggleGender(UIButton Button)
 	}
 
 	/*
+		Count this as a state change so UNDO can handle it.
+
 		NOTE The undo buffer gets all sorts of confused when it tries to track gender,
 		so for now it will just wipe the buffer clean to hit this button.
 	*/
 
-	//StoreAppearanceStateInUndoBuffer();
+	StoreAppearanceStateInUndoBuffer();
 
 	ForceSetTrait(CustomizeMenuScreen, eUICustomizeCat_Gender, 0, newGender);	
 	CustomizeMenuScreen.UpdateData(); // If I don't do this, things can get weird.
 
-	UndoBuffer.ClearTheBuffer();
-	UndoButtonGreyedOut();
+	//UndoBuffer.ClearTheBuffer();
+	//UndoButtonGreyedOut();
 }
 
 simulated function StoreAppearanceStateInUndoBuffer()
@@ -890,6 +892,7 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 	`log("* * * * * * * * * * * * * * * * * * * * * * * * *");
 	`log("");
 
+	// Store the last state in the buffer.
 	StoreAppearanceStateInUndoBuffer();
 
 	/*
@@ -955,6 +958,12 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 		RandomizeTrait(SoldierPropsLocks.WeaponColor.bChecked,		eUICustomizeCat_WeaponColor,			-1);
 		RandomizeTrait(SoldierPropsLocks.EyeColor.bChecked,			eUICustomizeCat_EyeColor,				-1);
 	}
+
+	/*
+		Store the state we just created on the buffer as well. This is to support UNDO
+		for alterations via the normal UI
+	*/
+	StoreAppearanceStateInUndoBuffer();
 }
 
 simulated function UndoAppearanceChanges(UIButton Button)
