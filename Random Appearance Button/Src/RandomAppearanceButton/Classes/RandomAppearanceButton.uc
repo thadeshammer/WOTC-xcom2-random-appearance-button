@@ -43,6 +43,13 @@
 
 	BUGS.
 
+	UNDO VS NORMAL UI MODIFICATIONS
+
+	Changed the label from "Undo" to "Recall" so it's not quite so weird that the button
+	doesn't track or affect normal user changers via the UI. What I **could** do is check
+	the current state vs the last stored state each time and if it's different just
+	rollback to the state and NOT pop it. That could work.
+
 	UNDO VS GENDER
 
 	Undo doesn't toggle Gender (maybe it should) and I leveraged this to maintain
