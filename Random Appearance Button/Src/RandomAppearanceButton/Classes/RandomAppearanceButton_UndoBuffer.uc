@@ -51,7 +51,13 @@ class RandomAppearanceButton_UndoBuffer extends Object
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 struct AppearanceState {
-	var array<int> Trait;
+	var array<int>	Trait;
+	var bool		bHasDLC1components;
+
+	structdefaultproperties
+	{
+		bHasDLC1components = false;
+	}
 };
 
 var array<AppearanceState> Buffer;
@@ -227,7 +233,7 @@ simulated function InitTheBuffer()
 		PushCurrentStateOntoBuffer();
 }
 
-simulated function PushCurrentStateOntoBuffer()
+simulated function PushCurrentStateOntoBuffer(bool bHasDLC1Arms = false)
 {
 	/*
 		YOU PROBABLY DON'T WANT TO CALL THIS.
@@ -238,11 +244,19 @@ simulated function PushCurrentStateOntoBuffer()
 	local AppearanceState CurrentState;
 
 	`log("UNDO BUFFER: Taking snapshot for push onto buffer.");
+
 	CurrentState = TakeAppearanceSnapshot(CustomizeMenuScreen);
+	CurrentState.bHasDLC1components = bHasDLC1Arms;
+
+	if (bHasDLC1Arms)
+		`log("UNDO BUFFER: Soldier has DLC1 arms.");
+	else
+		`log("UNDO BUFFER: Soldier does NOT have DLC1 arms.");
+
 	PushOnToBuffer(CurrentState);
 }
 
-simulated function StoreCurrentState()
+simulated function StoreCurrentState(optional bool bHasDLC1Arms = false)
 {
 	/*
 		Iterate over all trait categories, get their current values, store them
@@ -267,10 +281,10 @@ simulated function StoreCurrentState()
 
 	if ( BufferIsEmpty() ) {
 		`log("UNDO BUFFER: Buffer is emtpy; storing current state.");
-		PushCurrentStateOntoBuffer();
+		PushCurrentStateOntoBuffer(bHasDLC1Arms);
 	} else if ( ChangesWereMade() ) {
 		`log("UNDO BUFFER: Current state isn't at the front of the buffer; storing it.");
-		PushCurrentStateOntoBuffer();
+		PushCurrentStateOntoBuffer(bHasDLC1Arms);
 	} else {
 		`log("UNDO BUFFER: CurrentState matches BufferFront, NOT STORING.");
 	}
@@ -317,7 +331,8 @@ simulated static function AppearanceState TakeAppearanceSnapshot(const out UICus
 				eCatIndex = EUICustomizeCategory(iCategoryIndex);
 
 				if (iCategoryIndex >= eUICustomizeCat_LeftArm && iCategoryIndex <= eUICustomizeCat_RightArmDeco ||
-					iCategoryIndex == eUICustomizeCat_Arms)
+					iCategoryIndex == eUICustomizeCat_Arms ||
+					iCategoryIndex == eUICustomizeCat_Torso)
 					`log("   >" @ iTrait @ class'RandomAppearanceButton_Utilities'.static.CategoryName(eCatIndex) );
 
 				CurrentState.Trait[iCategoryIndex] = iTrait;
@@ -326,6 +341,22 @@ simulated static function AppearanceState TakeAppearanceSnapshot(const out UICus
 			default:
 				break;
 		}
+	}
+
+	/*
+		Snapshot needs to account for whether there's DLC 1 components
+		(otherwise stuff gets weird when undoing arms.)
+
+		This will probably negate the need for the button presses
+		to track this stuff.
+	*/
+	if (class'RandomAppearanceButton_Utilities'.static.SoldierHasDLC1Torso(Screen) || 
+		class'RandomAppearanceButton_Utilities'.static.SoldierHasDLC1Arms(Screen) ) {
+		`log("   > Has DLC1 components.");
+		CurrentState.bHasDLC1components = true;
+	} else {
+		`log("   > Doesn't have DLC1 components.");
+		CurrentState.bHasDLC1components = false;
 	}
 
 	return CurrentState;
@@ -367,6 +398,13 @@ simulated static function bool CompareAppearanceStates(const out AppearanceState
 				//`log("UNDO BUFFER: Compare" @ string(iCategoryIndex) @ "ignored/unknown");
 				break;
 		}
+	}
+
+	if (left.bHasDLC1components != right.bHasDLC1components) {
+		`log("UNDO BUFFER: DLC_1 components mismatch.");
+		return false;
+	} else {
+		`log("UNDO BUFFER: DLC_1 components match.");
 	}
 
 	`log("UNDO BUFFER: COMPARE: FULL MATCH.");
@@ -415,23 +453,25 @@ simulated static function ApplyAppearanceSnapshot(const out UICustomize_Menu Scr
 		switch (eCatType)
 		{
 			/*
-				Non-color appearance props and attributes require a "Direction"
-				of 0. I'm not clear on why but that's how they're handled.
+				Anarchy's Chilren's new arm slots will override in-place arms
+				if they're set...so we only set them if the arms are not set.
+				Likewise, we don't want them to mess with vanilla arms if they're
+				NOT involved, thus:
 			*/
 			case eCategoryType_Prop:
 
-				if (iCategoryIndex == eUICustomizeCat_Arms && AppearanceSnapshot.Trait[eUICustomizeCat_Arms] == -1)
-					iTrait = 0; // set arms to something not -1, it'll be overridden by the DLC arms.
-				
 				bSkipThisTrait = false;
+
+				if (iCategoryIndex == eUICustomizeCat_Arms && AppearanceSnapshot.bHasDLC1components)
+					bSkipThisTrait = true; // special handling
+
+				if (iCategoryIndex == eUICustomizeCat_Race)
+					bSkipThisTrait = true; // set above
+
 				break;
 
-			/*
-				Anarchy's Chilren's new arm slots will override in-place arms
-				if they're set...so we only set them if the arms are not set.
-			*/
 			case eCategoryType_DLC_1:
-				if (AppearanceSnapshot.Trait[eUICustomizeCat_Arms] == -1)
+				if (AppearanceSnapshot.bHasDLC1components)
 					bSkipThisTrait = false;
 				else
 					bSkipThisTrait = true;

@@ -136,6 +136,57 @@ simulated static function string CategoryName(EUICustomizeCategory eCategory)
 	return strPropName;
 }
 
+simulated static function bool SoldierHasDLC1Torso(UICustomize_Menu CustomizeMenuScreen)
+{
+	local XComGameState_Unit	Unit;
+	local string				strTorsoName;
+
+	 Unit = CustomizeMenuScreen.Movie.Pres.GetCustomizationUnit();
+
+	 /*
+		Currently it appears that all of the DLC_1's special
+		torsos have (UE3) Names with the prefix 'DLC_30'.
+		Not sure why it's not 'DLC_1' like everything else,
+		but if it's as consistent as it appears, we're in
+		business.
+	 */
+
+	 `log("UTIL: nmTorso ==" @ Unit.kAppearance.nmTorso);
+
+	 strTorsoName = string(Unit.kAppearance.nmTorso);
+
+	 if ( InStr(strTorsoName, "DLC_30") != -1 ) {
+		`log("UTIL: IS DLC_1 TORSO.");
+		return true;
+	} else {
+		`log("UTIL: IS NOT DLC_1 TORSO.");
+		return false;
+	}
+}
+
+simulated static function bool SoldierHasDLC1Arms(UICustomize_Menu CustomizeMenuScreen)
+{
+	local XComGameState_Unit Unit;
+
+	 Unit = CustomizeMenuScreen.Movie.Pres.GetCustomizationUnit();
+
+	 /*
+		As of the DLC_1 release, the only thing that LEGIT results in the
+		arms (button label) name being empty is if one of the DLC_1 arm
+		items has been slotted. This may not remain sufficient.
+	 */
+
+	 `log("UTIL: nmArms ==" @ Unit.kAppearance.nmArms);
+
+	 if (Unit.kAppearance.nmArms == '') {
+		`log("UTIL: ARE DLC_1 ARMS.");
+		return true;
+	} else {
+		`log("UTIL: ARE NOT DLC_1 ARMS.");
+		return false;
+	}
+}
+
 simulated static function ResetTheCamera(UICustomize_Menu Screen)
 {
 	/*
