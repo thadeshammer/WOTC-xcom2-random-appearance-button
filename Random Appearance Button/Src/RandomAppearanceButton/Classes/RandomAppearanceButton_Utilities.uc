@@ -10,7 +10,7 @@ enum ECategoryType {
 
 	eCategoryType_Prop,
 	eCategoryType_Color,
-	eCategoryType_Gender,
+	eCategoryType_Special,
 	eCategoryType_DLC_1,
 	eCategoryType_IGNORE,
 	eCategoryType_UNKNOWN
@@ -24,11 +24,14 @@ simulated static function ECategoryType GetCategoryType(const out int iCategoryI
 	switch (iCategoryIndex)
 		{
 			/*
-				Gender often requires special handling so it's treated like the
-				special snowflake that it is.
+				These special snowflakes require special handling or setting
+				attributes/props on undo actions won't work as you'd expect.
+
+				Gender first, then Race, than anything else.
 			*/
 			case eUICustomizeCat_Gender:
-				return eCategoryType_Gender;
+			case eUICustomizeCat_Race:
+				return eCategoryType_Special;
 				break;
 
 			/*
@@ -36,8 +39,7 @@ simulated static function ECategoryType GetCategoryType(const out int iCategoryI
 				of 0. I'm not clear on why but that's how they're handled.
 			*/
 			case eUICustomizeCat_Face:
-			case eUICustomizeCat_Hairstyle:
-			case eUICustomizeCat_Race:
+			case eUICustomizeCat_Hairstyle:			
 			case eUICustomizeCat_Arms:
 			case eUICustomizeCat_Torso:
 			case eUICustomizeCat_Legs:
@@ -106,6 +108,23 @@ simulated static function ECategoryType GetCategoryType(const out int iCategoryI
 		}
 }
 
+simulated static function int PropDirection(ECategoryType eCatType)
+{
+	switch (eCatType) {
+		case eCategoryType_Prop:
+		case eCategoryType_Special:
+		case eCategoryType_DLC_1:
+			return 0;
+			break;
+
+		case eCategoryType_Color:
+			return -1;
+			break;
+
+		default:
+			return 1000;
+	}
+}
 
 simulated static function ResetTheCamera(UICustomize_Menu Screen)
 {

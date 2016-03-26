@@ -583,7 +583,7 @@ simulated function ToggleGender(UIButton Button)
 
 	StoreAppearanceStateInUndoBuffer();
 
-	ForceSetTrait(CustomizeMenuScreen, eUICustomizeCat_Gender, 0, newGender);	
+	ForceSetTrait(CustomizeMenuScreen, eUICustomizeCat_Gender, newGender);	
 	//CustomizeMenuScreen.UpdateData(); // If I don't do this, things can get weird.
 	UpdateScreenData();
 
@@ -753,30 +753,30 @@ simulated function GenerateTotallyRandomAppearance(UIButton Button)
 	StoreAppearanceStateInUndoBuffer();
 
 	// Core customization menu
-	RandomizeTrait(SoldierPropsLocks.Face.bChecked,			eUICustomizeCat_Face,					0,	true);
-	RandomizeTrait(SoldierPropsLocks.Hair.bChecked,			eUICustomizeCat_Hairstyle,				0,	true);
-	RandomizeTrait(SoldierPropsLocks.FacialHair.bChecked,		eUICustomizeCat_FacialHair,				0,	true);
-	RandomizeTrait(SoldierPropsLocks.HairColor.bChecked,		eUICustomizeCat_HairColor,				-1, true);
-	RandomizeTrait(SoldierPropsLocks.EyeColor.bChecked,		eUICustomizeCat_EyeColor,				-1, true);
-	RandomizeTrait(SoldierPropsLocks.Race.bChecked,			eUICustomizeCat_Race,					0,	true);
-	RandomizeTrait(SoldierPropsLocks.SkinColor.bChecked,		eUICustomizeCat_Skin,					-1, true);
-	RandomizeTrait(SoldierPropsLocks.MainColor.bChecked,		eUICustomizeCat_PrimaryArmorColor,		-1, true);
-	RandomizeTrait(SoldierPropsLocks.SecondaryColor.bChecked,	eUICustomizeCat_SecondaryArmorColor,	-1, true);
-	RandomizeTrait(SoldierPropsLocks.WeaponColor.bChecked,		eUICustomizeCat_WeaponColor,			-1, true);
+	RandomizeTrait(SoldierPropsLocks.Face.bChecked,			eUICustomizeCat_Face,						true);
+	RandomizeTrait(SoldierPropsLocks.Hair.bChecked,			eUICustomizeCat_Hairstyle,					true);
+	RandomizeTrait(SoldierPropsLocks.FacialHair.bChecked,		eUICustomizeCat_FacialHair,				true);
+	RandomizeTrait(SoldierPropsLocks.HairColor.bChecked,		eUICustomizeCat_HairColor,				true);
+	RandomizeTrait(SoldierPropsLocks.EyeColor.bChecked,		eUICustomizeCat_EyeColor,					true);
+	RandomizeTrait(SoldierPropsLocks.Race.bChecked,			eUICustomizeCat_Race,						true);
+	RandomizeTrait(SoldierPropsLocks.SkinColor.bChecked,		eUICustomizeCat_Skin,					true);
+	RandomizeTrait(SoldierPropsLocks.MainColor.bChecked,		eUICustomizeCat_PrimaryArmorColor,		true);
+	RandomizeTrait(SoldierPropsLocks.SecondaryColor.bChecked,	eUICustomizeCat_SecondaryArmorColor,	true);
+	RandomizeTrait(SoldierPropsLocks.WeaponColor.bChecked,		eUICustomizeCat_WeaponColor,			true);
 
 	// customize props menu
-	RandomizeTrait(SoldierPropsLocks.UpperFace.bChecked,		eUICustomizeCat_FaceDecorationUpper,	0,	true);
-	RandomizeTrait(SoldierPropsLocks.LowerFace.bChecked,		eUICustomizeCat_FaceDecorationLower,	0,	true);
-	RandomizeTrait(SoldierPropsLocks.Helmet.bChecked,			eUICustomizeCat_Helmet,					0,	true);	
-	RandomizeTrait(SoldierPropsLocks.Torso.bChecked,			eUICustomizeCat_Torso,					0,	true);
-	RandomizeTrait(SoldierPropsLocks.Legs.bChecked,				eUICustomizeCat_Legs,					0,	true);
-	RandomizeTrait(SoldierPropsLocks.ArmorPattern.bChecked,		eUICustomizeCat_ArmorPatterns,			0,	true);
-	RandomizeTrait(SoldierPropsLocks.WeaponPattern.bChecked,	eUICustomizeCat_WeaponPatterns,			0,	true);
-	RandomizeTrait(SoldierPropsLocks.TattoosLeft.bChecked,		eUICustomizeCat_LeftArmTattoos,			0,	true);
-	RandomizeTrait(SoldierPropsLocks.TattoosRight.bChecked,		eUICustomizeCat_RightArmTattoos,		0,	true);
-	RandomizeTrait(SoldierPropsLocks.TattoosColor.bChecked,		eUICustomizeCat_TattooColor,			-1,	true);
-	RandomizeTrait(SoldierPropsLocks.Scars.bChecked,			eUICustomizeCat_Scars,					0,	true);
-	RandomizeTrait(SoldierPropsLocks.FacePaint.bChecked,		eUICustomizeCat_FacePaint,				0,	true);
+	RandomizeTrait(SoldierPropsLocks.UpperFace.bChecked,		eUICustomizeCat_FaceDecorationUpper,	true);
+	RandomizeTrait(SoldierPropsLocks.LowerFace.bChecked,		eUICustomizeCat_FaceDecorationLower,	true);
+	RandomizeTrait(SoldierPropsLocks.Helmet.bChecked,			eUICustomizeCat_Helmet,					true);	
+	RandomizeTrait(SoldierPropsLocks.Torso.bChecked,			eUICustomizeCat_Torso,					true);
+	RandomizeTrait(SoldierPropsLocks.Legs.bChecked,				eUICustomizeCat_Legs,					true);
+	RandomizeTrait(SoldierPropsLocks.ArmorPattern.bChecked,		eUICustomizeCat_ArmorPatterns,			true);
+	RandomizeTrait(SoldierPropsLocks.WeaponPattern.bChecked,	eUICustomizeCat_WeaponPatterns,			true);
+	RandomizeTrait(SoldierPropsLocks.TattoosLeft.bChecked,		eUICustomizeCat_LeftArmTattoos,			true);
+	RandomizeTrait(SoldierPropsLocks.TattoosRight.bChecked,		eUICustomizeCat_RightArmTattoos,		true);
+	RandomizeTrait(SoldierPropsLocks.TattoosColor.bChecked,		eUICustomizeCat_TattooColor,			true);
+	RandomizeTrait(SoldierPropsLocks.Scars.bChecked,			eUICustomizeCat_Scars,					true);
+	RandomizeTrait(SoldierPropsLocks.FacePaint.bChecked,		eUICustomizeCat_FacePaint,				true);
 
 	`log("DOING ARMS.");
 	`log("Checking for DLC1.");
@@ -790,7 +790,7 @@ simulated function GenerateTotallyRandomAppearance(UIButton Button)
 		// If there's no DLC, we roll.
 
 		`log("No DLC, rolling arms as normal.");
-		RandomizeTrait(SoldierPropsLocks.Arms.bChecked,				eUICustomizeCat_Arms,					0,	true);
+		RandomizeTrait(SoldierPropsLocks.Arms.bChecked,				eUICustomizeCat_Arms,				true);
 	}
 	`log("DONE WITH ARMS.");
 
@@ -844,8 +844,11 @@ simulated function HandleDLC1()
 				If any one of these are locked, then we can't roll for standard arms because they'll
 				override whatever DLC arm prop is locked, so...we just don't. We instead roll for
 				the new arm props.
-			*/
 
+				Since we're going to be getting DLC arms here, we set the arms to the "unset" or default position
+				of -1.
+			*/
+			ForceSetTrait(CustomizeMenuScreen, eUICustomizeCat_Arms, -1);
 			RandomizeDLC1ArmSlots();
 
 		} else {
@@ -854,8 +857,15 @@ simulated function HandleDLC1()
 				the concerns laid out in the above back-of-the napkin math, we only overwrite the new
 				arms picked based on a (small) chance from the config.
 			*/
+
+			ForceSetTrait(CustomizeMenuScreen, eUICustomizeCat_LeftArm, 0);
+			ForceSetTrait(CustomizeMenuScreen, eUICustomizeCat_RightArm, 0);
+			ForceSetTrait(CustomizeMenuScreen, eUICustomizeCat_LeftArmDeco, 0);
+			ForceSetTrait(CustomizeMenuScreen, eUICustomizeCat_RightArmDeco, 0);
 			
-			RandomizeTrait(SoldierPropsLocks.Arms.bChecked,				eUICustomizeCat_Arms,					0,	true);
+			RandomizeTrait(SoldierPropsLocks.Arms.bChecked,				eUICustomizeCat_Arms,					true);
+						
+
 			
 			if (RandomizeOrNotBasedOnRoll(RABConf_TotallyRandom_AnarchysChildrenArmsChance)) {
 
@@ -865,7 +875,11 @@ simulated function HandleDLC1()
 					of vanilla arms) some of the time and not all of the time. (See above for shoddy napkin math.)
 
 					The chance is set in the config file.
+
+					Since we're going to be getting DLC arms here, we set the arms to the "unset" or default position
+					of -1.
 				*/
+				ForceSetTrait(CustomizeMenuScreen, eUICustomizeCat_Arms, -1);
 				RandomizeDLC1ArmSlots();
 			}
 		}
@@ -876,16 +890,16 @@ simulated function HandleDLC1()
 		Otherwise, no worries, just roll on the arms the old fashioned way!
 	*/
 
-		RandomizeTrait(SoldierPropsLocks.Arms.bChecked,				eUICustomizeCat_Arms,					0,	true);
+		RandomizeTrait(SoldierPropsLocks.Arms.bChecked,				eUICustomizeCat_Arms,					true);
 	}
 }
 
 simulated function RandomizeDLC1ArmSlots()
 {
-	RandomizeTrait(SoldierPropsLocks.LeftArmUpper.bChecked,		eUICustomizeCat_LeftArmDeco,		0, true);
-	RandomizeTrait(SoldierPropsLocks.RightArmUpper.bChecked,	eUICustomizeCat_RightArmDeco,		0, true);
-	RandomizeTrait(SoldierPropsLocks.LeftArmLower.bChecked,		eUICustomizeCat_LeftArm,			0, true);
-	RandomizeTrait(SoldierPropsLocks.RightArmLower.bChecked,	eUICustomizeCat_RightArm,			0, true);
+	RandomizeTrait(SoldierPropsLocks.LeftArmUpper.bChecked,		eUICustomizeCat_LeftArmDeco,		true);
+	RandomizeTrait(SoldierPropsLocks.RightArmUpper.bChecked,	eUICustomizeCat_RightArmDeco,		true);
+	RandomizeTrait(SoldierPropsLocks.LeftArmLower.bChecked,		eUICustomizeCat_LeftArm,			true);
+	RandomizeTrait(SoldierPropsLocks.RightArmLower.bChecked,	eUICustomizeCat_RightArm,			true);
 }
 
 simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
@@ -910,15 +924,15 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 	*/
 
 	// For Sure do these.
-	RandomizeTrait(SoldierPropsLocks.Face.bChecked,				eUICustomizeCat_Face,			0);
-	RandomizeTrait(SoldierPropsLocks.Hair.bChecked,				eUICustomizeCat_Hairstyle,		0);
+	RandomizeTrait(SoldierPropsLocks.Face.bChecked,				eUICustomizeCat_Face);
+	RandomizeTrait(SoldierPropsLocks.Hair.bChecked,				eUICustomizeCat_Hairstyle);
 		
-	RandomizeTrait(SoldierPropsLocks.Race.bChecked,				eUICustomizeCat_Race,			0);
-	RandomizeTrait(SoldierPropsLocks.SkinColor.bChecked,		eUICustomizeCat_Skin,			-1);
+	RandomizeTrait(SoldierPropsLocks.Race.bChecked,				eUICustomizeCat_Race);
+	RandomizeTrait(SoldierPropsLocks.SkinColor.bChecked,		eUICustomizeCat_Skin);
 
-	RandomizeTrait(SoldierPropsLocks.Arms.bChecked,				eUICustomizeCat_Arms,			0);
-	RandomizeTrait(SoldierPropsLocks.Torso.bChecked,			eUICustomizeCat_Torso,			0);
-	RandomizeTrait(SoldierPropsLocks.Legs.bChecked,				eUICustomizeCat_Legs,			0);
+	RandomizeTrait(SoldierPropsLocks.Arms.bChecked,				eUICustomizeCat_Arms);
+	RandomizeTrait(SoldierPropsLocks.Torso.bChecked,			eUICustomizeCat_Torso);
+	RandomizeTrait(SoldierPropsLocks.Legs.bChecked,				eUICustomizeCat_Legs);
 
 	/*
 		Conditionally randomize these (configurable in XComRandomAppearanceButton.ini).
@@ -926,14 +940,14 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 		Optionals per the game's default soldier generator: facial hair and decorations, hat.
 		Optionals per me: armor and weapon patterns, tattoos, scars, face paint.
 	*/
-	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_FacialHair,				0, SoldierPropsLocks.FacialHair.bChecked,		RABConf_BeardChance);
-	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_FaceDecorationUpper,	0, SoldierPropsLocks.UpperFace.bChecked,		RABConf_UpperFacePropChance);
-	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_FaceDecorationLower,	0, SoldierPropsLocks.LowerFace.bChecked,		RABConf_LowerFacePropChance);
-	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_Helmet,					0, SoldierPropsLocks.Helmet.bChecked,			RABConf_HatChance);
-	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_ArmorPatterns,			0, SoldierPropsLocks.ArmorPattern.bChecked,		RABConf_ArmorPatternChance);
-	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_WeaponPatterns,			0, SoldierPropsLocks.WeaponPattern.bChecked,	RABConf_WeaponPatternChance);
-	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_Scars,					0, SoldierPropsLocks.Scars.bChecked,			RABConf_ScarsChance);
-	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_FacePaint,				0, SoldierPropsLocks.FacePaint.bChecked,		RABConf_FacePaintChance);
+	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_FacialHair,				SoldierPropsLocks.FacialHair.bChecked,		RABConf_BeardChance);
+	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_FaceDecorationUpper,	SoldierPropsLocks.UpperFace.bChecked,		RABConf_UpperFacePropChance);
+	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_FaceDecorationLower,	SoldierPropsLocks.LowerFace.bChecked,		RABConf_LowerFacePropChance);
+	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_Helmet,					SoldierPropsLocks.Helmet.bChecked,			RABConf_HatChance);
+	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_ArmorPatterns,			SoldierPropsLocks.ArmorPattern.bChecked,		RABConf_ArmorPatternChance);
+	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_WeaponPatterns,			SoldierPropsLocks.WeaponPattern.bChecked,	RABConf_WeaponPatternChance);
+	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_Scars,					SoldierPropsLocks.Scars.bChecked,			RABConf_ScarsChance);
+	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_FacePaint,				SoldierPropsLocks.FacePaint.bChecked,		RABConf_FacePaintChance);
 
 	/*
 		I handle the tattoos as one field; could handle them individually as I do everything else, but this made
@@ -941,29 +955,29 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 
 		Set the color (if there are no tattoos, no worries, it won't show up).
 	*/
-	RandomizeTrait(SoldierPropsLocks.TattoosColor.bChecked,		eUICustomizeCat_TattooColor,	-1);
+	RandomizeTrait(SoldierPropsLocks.TattoosColor.bChecked,		eUICustomizeCat_TattooColor);
 
-	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_LeftArmTattoos,			0, SoldierPropsLocks.TattoosLeft.bChecked,		RABConf_TattoosChance);
-	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_RightArmTattoos,		0, SoldierPropsLocks.TattoosRight.bChecked,		RABConf_TattoosChance);
+	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_LeftArmTattoos,			SoldierPropsLocks.TattoosLeft.bChecked,		RABConf_TattoosChance);
+	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_RightArmTattoos,		SoldierPropsLocks.TattoosRight.bChecked,		RABConf_TattoosChance);
 	
 	/*
 		Colors!
 	*/
 	if (RABConf_ForceDefaultColors)
 	{
-		RandomizeTrait(SoldierPropsLocks.HairColor.bChecked,		eUICustomizeCat_HairColor,				-1, false, EForceDefaultColorFlags.HairColors);
-		RandomizeTrait(SoldierPropsLocks.MainColor.bChecked,		eUICustomizeCat_PrimaryArmorColor,		-1, false, EForceDefaultColorFlags.ArmorColors);
-		RandomizeTrait(SoldierPropsLocks.SecondaryColor.bChecked,	eUICustomizeCat_SecondaryArmorColor,	-1, false, EForceDefaultColorFlags.ArmorColors);
-		RandomizeTrait(SoldierPropsLocks.WeaponColor.bChecked,		eUICustomizeCat_WeaponColor,			-1, false, EForceDefaultColorFlags.WeaponColors);
-		RandomizeTrait(SoldierPropsLocks.EyeColor.bChecked,			eUICustomizeCat_EyeColor,				-1, false, EForceDefaultColorFlags.EyeColors);
+		RandomizeTrait(SoldierPropsLocks.HairColor.bChecked,		eUICustomizeCat_HairColor,				false, EForceDefaultColorFlags.HairColors);
+		RandomizeTrait(SoldierPropsLocks.MainColor.bChecked,		eUICustomizeCat_PrimaryArmorColor,		false, EForceDefaultColorFlags.ArmorColors);
+		RandomizeTrait(SoldierPropsLocks.SecondaryColor.bChecked,	eUICustomizeCat_SecondaryArmorColor,	false, EForceDefaultColorFlags.ArmorColors);
+		RandomizeTrait(SoldierPropsLocks.WeaponColor.bChecked,		eUICustomizeCat_WeaponColor,			false, EForceDefaultColorFlags.WeaponColors);
+		RandomizeTrait(SoldierPropsLocks.EyeColor.bChecked,			eUICustomizeCat_EyeColor,				false, EForceDefaultColorFlags.EyeColors);
 	}
 	else
 	{
-		RandomizeTrait(SoldierPropsLocks.HairColor.bChecked,		eUICustomizeCat_HairColor,				-1);
-		RandomizeTrait(SoldierPropsLocks.MainColor.bChecked,		eUICustomizeCat_PrimaryArmorColor,		-1);
-		RandomizeTrait(SoldierPropsLocks.SecondaryColor.bChecked,	eUICustomizeCat_SecondaryArmorColor,	-1);
-		RandomizeTrait(SoldierPropsLocks.WeaponColor.bChecked,		eUICustomizeCat_WeaponColor,			-1);
-		RandomizeTrait(SoldierPropsLocks.EyeColor.bChecked,			eUICustomizeCat_EyeColor,				-1);
+		RandomizeTrait(SoldierPropsLocks.HairColor.bChecked,		eUICustomizeCat_HairColor);
+		RandomizeTrait(SoldierPropsLocks.MainColor.bChecked,		eUICustomizeCat_PrimaryArmorColor);
+		RandomizeTrait(SoldierPropsLocks.SecondaryColor.bChecked,	eUICustomizeCat_SecondaryArmorColor);
+		RandomizeTrait(SoldierPropsLocks.WeaponColor.bChecked,		eUICustomizeCat_WeaponColor);
+		RandomizeTrait(SoldierPropsLocks.EyeColor.bChecked,			eUICustomizeCat_EyeColor);
 	}
 
 	/*
@@ -976,8 +990,6 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 
 simulated function UndoAppearanceChanges(UIButton Button)
 {
-	local bool UndoReady;
-
 	if (UndoBuffer == none)
 		`log("RANDMAIN: There is no UndoBuffer. :(");
 
@@ -997,25 +1009,28 @@ simulated function UndoAppearanceChanges(UIButton Button)
 	ResetTheCamera();
 }
 
-simulated function ResetAndConditionallyRandomizeTrait(EUICustomizeCategory Category, int iDirection, bool bIsTraitLocked, float ChanceToRandomize)
+simulated function ResetAndConditionallyRandomizeTrait(EUICustomizeCategory Category, bool bIsTraitLocked, float ChanceToRandomize)
 {
 	/*
 		Reset the trait to 0 then, if we're supposed to randomize it, do so.
 	*/
 
-	SetTrait(Category, iDirection, 0, bIsTraitLocked);
+	SetTrait(Category, 0, bIsTraitLocked);
 	if (RandomizeOrNotBasedOnRoll(ChanceToRandomize)) {
-		RandomizeTrait(bIsTraitLocked, Category, iDirection);
+		RandomizeTrait(bIsTraitLocked, Category);
 	}
 }
 
-simulated function RandomizeTrait(bool bIsTraitLocked, EUICustomizeCategory eCategory, int iDirection, 
+simulated function RandomizeTrait(bool bIsTraitLocked, EUICustomizeCategory eCategory,
 									optional bool bTotallyRandom = false,
 									optional EForceDefaultColorFlags eForceDefaultColor = NotForced)
 {
 	local array<string> options;
 	local int			maxOptions;
 	local int			maxRange;
+	local int			iCategory;
+	local ECategoryType eCatType;
+	local int			iDirection;
 
 	/*
 		I don't know what int direction does (mostly for lack of trying) but it's the 2nd param
@@ -1023,6 +1038,10 @@ simulated function RandomizeTrait(bool bIsTraitLocked, EUICustomizeCategory eCat
 	*/
 
 	if (!bIsTraitLocked) {
+
+		iCategory = eCategory; // annoying caveat to UE3; casting inline doesn't work below
+		eCatType = class'RandomAppearanceButton_Utilities'.static.GetCategoryType(iCategory);
+		iDirection = class'RandomAppearanceButton_Utilities'.static.PropDirection(eCatType);
 
 		switch (iDirection) {
 			case 0:
@@ -1072,29 +1091,38 @@ simulated function RandomizeTrait(bool bIsTraitLocked, EUICustomizeCategory eCat
 
 		*/
 
-		SetTrait(eCategory, iDirection, `SYNC_RAND(maxOptions), bIsTraitLocked);
+		SetTrait(eCategory, `SYNC_RAND(maxOptions), bIsTraitLocked);
 		ResetTheCamera();
 
 	} // endif (!bIsTraitLocked)
 }
 
-simulated static function ForceSetTrait(UICustomize_Menu Screen, EUICustomizeCategory eCategory, int iDirection, int iSetting)
+simulated static function ForceSetTrait(UICustomize_Menu Screen, EUICustomizeCategory eCategory, int iSetting)
 {
+	local ECategoryType		eCatType;
+	local int				iDirection;
+	local int				iCategory;
+
+	iCategory = eCategory; // annoying caveat of UE3; inline casting won't work below
+	eCatType = class'RandomAppearanceButton_Utilities'.static.GetCategoryType(iCategory);
+	iDirection = class'RandomAppearanceButton_Utilities'.static.PropDirection(eCatType);
+
 	/*
 		OnCategoryValueChange, which is actually a callback	usually triggered
 		by UI interaction. Basically the game responds to my mod the same way
 		it responds to the user clicking on a given setting within a picker.
 	*/
-
 	Screen.CustomizeManager.OnCategoryValueChange(eCategory, iDirection, iSetting);
 	Screen.CustomizeManager.UpdateCamera();
 }
 
-simulated function SetTrait(EUICustomizeCategory eCategory, int iDirection, int iTraitIndex, bool bIsTraitLocked)
+simulated function SetTrait(EUICustomizeCategory eCategory, int iTraitIndex, bool bIsTraitLocked)
 {
+
 	if (!bIsTraitLocked) {
-		ForceSetTrait(CustomizeMenuScreen, eCategory, iDirection, iTraitIndex);
+		ForceSetTrait(CustomizeMenuScreen, eCategory, iTraitIndex);
 	}
+
 }
 
 simulated static function int GetTrait(UICustomize_Menu Screen, EUICustomizeCategory eCategory)

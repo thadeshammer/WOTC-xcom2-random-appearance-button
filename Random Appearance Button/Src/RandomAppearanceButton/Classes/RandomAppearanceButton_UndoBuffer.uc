@@ -278,7 +278,7 @@ simulated static function AppearanceState AppearanceStateSnapshot(const out UICu
 		switch ( GetCategoryType(iCategoryIndex) ) {
 			case eCategoryType_Prop:
 			case eCategoryType_Color:
-			case eCategoryType_Gender:
+			case eCategoryType_Special:
 			case eCategoryType_DLC_1:
 				iTrait = class'RandomAppearanceButton'.static.GetTrait(Screen, EUICustomizeCategory(iCategoryIndex));
 
@@ -327,7 +327,7 @@ simulated static function bool CompareAppearanceStates(const out AppearanceState
 		switch( GetCategoryType(iCategoryIndex) ) {
 			case eCategoryType_Prop:
 			case eCategoryType_Color:
-			case eCategoryType_Gender:
+			case eCategoryType_Special:
 			case eCategoryType_DLC_1:
 				eCatIndex = EUICustomizeCategory(iCategoryIndex);
 				if (left.Trait[iCategoryIndex] != right.Trait[iCategoryIndex]) {
@@ -355,7 +355,6 @@ simulated static function ApplyAppearanceStateSnapshot(const out UICustomize_Men
 	local int		iCategoryIndex;
 	local int		eCatType;
 	local int		iTrait;
-	local int		iDirection;
 	local bool		bSkipThisTrait;
 
 	bSkipThisTrait = false;
@@ -374,8 +373,16 @@ simulated static function ApplyAppearanceStateSnapshot(const out UICustomize_Men
 		kills the buffer" so I'll go that path for now.
 	*/
 
-	class'RandomAppearanceButton'.static.ForceSetTrait(Screen, EUICustomizeCategory(eUICustomizeCat_Gender), 0, AppearanceSnapshot.Trait[eUICustomizeCat_Gender] - 1);
-	Screen.UpdateData();	
+	class'RandomAppearanceButton'.static.ForceSetTrait(Screen, EUICustomizeCategory(eUICustomizeCat_Gender), AppearanceSnapshot.Trait[eUICustomizeCat_Gender] - 1);
+	Screen.UpdateData();
+
+	/*
+		Race comes next and before everything else, otherwise the face won't
+		be correctly set. (It's not lost, just set to 0 and is detected as
+		a "manual change".)
+	*/
+
+	class'RandomAppearanceButton'.static.ForceSetTrait(Screen, EUICustomizeCategory(eUICustomizeCat_Race), AppearanceSnapshot.Trait[eUICustomizeCat_Race]);
 
 	for (iCategoryIndex = 0; iCategoryIndex <= eUICustomizeCat_MAX; iCategoryIndex++) {
 
@@ -389,25 +396,22 @@ simulated static function ApplyAppearanceStateSnapshot(const out UICustomize_Men
 				of 0. I'm not clear on why but that's how they're handled.
 			*/
 			case eCategoryType_Prop:
-				bSkipThisTrait = false;
-				iDirection = 0;
-				break;
+
+				//if (iCategoryIndex == eUICustomizeCat_Arms && AppearanceSnapshot.Trait[eUICustomizeCat_Arms] == -1)
+				//	bSkipThisTrait = true;
+				//else
+					bSkipThisTrait = false;
+				//break;
 
 			/*
 				Anarchy's Chilren's new arm slots will override in-place arms
-				if they're set...so we only set them if they're non-zero in
-				the snapshot. (Hopefully that's okay, but this might lead to
-				weirdness if either the game or I don't set those slots to zero
-				when the vanilla arms are explicitly set.)
-
-				Without this, any Undo results in the arms becoming DLC 1 arms.
+				if they're set...so we only set them if the arms are not set.
 			*/
 			case eCategoryType_DLC_1:
-				iDirection = 0;
-				if (iTrait == 0)
-					bSkipThisTrait = true;
-				else
+				if (AppearanceSnapshot.Trait[eUICustomizeCat_Arms] == -1)
 					bSkipThisTrait = false;
+				else
+					bSkipThisTrait = true;
 				break;
 
 			/*
@@ -415,7 +419,6 @@ simulated static function ApplyAppearanceStateSnapshot(const out UICustomize_Men
 			*/
 			case eCategoryType_Color:
 				bSkipThisTrait = false;
-				iDirection = -1;
 				break;
 
 			/*
@@ -429,14 +432,14 @@ simulated static function ApplyAppearanceStateSnapshot(const out UICustomize_Men
 			*/
 			case eCategoryType_IGNORE:
 			case eCategoryType_UNKNOWN:
-			case eCategoryType_Gender:
+			case eCategoryType_Special:
 				bSkipThisTrait = true;
 				break;
 
 		}
 		
 		if (!bSkipThisTrait) {
-			class'RandomAppearanceButton'.static.ForceSetTrait(Screen, EUICustomizeCategory(iCategoryIndex), iDirection, iTrait);
+			class'RandomAppearanceButton'.static.ForceSetTrait(Screen, EUICustomizeCategory(iCategoryIndex), iTrait);
 		}
 
 	}
