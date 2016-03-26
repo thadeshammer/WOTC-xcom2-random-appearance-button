@@ -584,7 +584,8 @@ simulated function ToggleGender(UIButton Button)
 	StoreAppearanceStateInUndoBuffer();
 
 	ForceSetTrait(CustomizeMenuScreen, eUICustomizeCat_Gender, 0, newGender);	
-	CustomizeMenuScreen.UpdateData(); // If I don't do this, things can get weird.
+	//CustomizeMenuScreen.UpdateData(); // If I don't do this, things can get weird.
+	UpdateScreenData();
 
 	//UndoBuffer.ClearTheBuffer();
 	//UndoButtonGreyedOut();
@@ -600,7 +601,8 @@ simulated function UndoButtonGreyedOut()
 {
 	local string strLabel;
 
-	strLabel = "Recall: 0";
+	//strLabel = "Recall: 0";
+	strLabel = "Undo";
 
 	UndoButton.SetText(class'UIUtilities_Text'.static.GetColoredText(strLabel, eUIState_Disabled, BUTTON_LABEL_FONTSIZE));
 }
@@ -609,7 +611,8 @@ simulated function UndoButtonLitUp()
 {
 	local string strLabel;
 
-	strLabel = "Recall:" @ string(UndoBuffer.Buffer.Length);
+	//strLabel = "Recall:" @ string(UndoBuffer.Buffer.Length);
+	strLabel = "Undo";
 
 	UndoButton.SetText(class'UIUtilities_Text'.static.GetColoredText(strLabel, eUIState_Normal, BUTTON_LABEL_FONTSIZE));
 }
@@ -741,11 +744,12 @@ simulated function GenerateTotallyRandomAppearance(UIButton Button)
 	`log("");
 	`log("* * * * * * * * * * * * * * * * * * * * * * * * *");
 	`log("");
-	`log("GENERATING NEW APPEARANCE");
+	`log("GENERATING TOTALLY RANDOM APPEARANCE");
 	`log("");
 	`log("* * * * * * * * * * * * * * * * * * * * * * * * *");
 	`log("");
 	
+	`log("TOTALRAND: Storing current appearance in undo buffer (if it's not there already).");
 	StoreAppearanceStateInUndoBuffer();
 
 	// Core customization menu
@@ -790,6 +794,8 @@ simulated function GenerateTotallyRandomAppearance(UIButton Button)
 	}
 	`log("DONE WITH ARMS.");
 
+	`log("TOTALRAND: Storing current appearance in undo buffer.");
+	StoreAppearanceStateInUndoBuffer();
 }
 
 simulated function HandleDLC1()
@@ -887,12 +893,12 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 	`log("");
 	`log("* * * * * * * * * * * * * * * * * * * * * * * * *");
 	`log("");
-	`log("GENERATING NEW NORMAL LOOKING APPEARANCE");
+	`log("GENERATING NORMAL LOOKING APPEARANCE");
 	`log("");
 	`log("* * * * * * * * * * * * * * * * * * * * * * * * *");
 	`log("");
 
-	// Store the last state in the buffer.
+	`log("TOTALRAND: Storing current appearance in undo buffer.");
 	StoreAppearanceStateInUndoBuffer();
 
 	/*
@@ -904,15 +910,15 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 	*/
 
 	// For Sure do these.
-	RandomizeTrait(SoldierPropsLocks.Face.bChecked,			eUICustomizeCat_Face,		0);
-	RandomizeTrait(SoldierPropsLocks.Hair.bChecked,			eUICustomizeCat_Hairstyle,	0);
+	RandomizeTrait(SoldierPropsLocks.Face.bChecked,				eUICustomizeCat_Face,			0);
+	RandomizeTrait(SoldierPropsLocks.Hair.bChecked,				eUICustomizeCat_Hairstyle,		0);
 		
-	RandomizeTrait(SoldierPropsLocks.Race.bChecked,			eUICustomizeCat_Race,		0);
-	RandomizeTrait(SoldierPropsLocks.SkinColor.bChecked,		eUICustomizeCat_Skin,		-1);
+	RandomizeTrait(SoldierPropsLocks.Race.bChecked,				eUICustomizeCat_Race,			0);
+	RandomizeTrait(SoldierPropsLocks.SkinColor.bChecked,		eUICustomizeCat_Skin,			-1);
 
-	RandomizeTrait(SoldierPropsLocks.Arms.bChecked,				eUICustomizeCat_Arms,		0);
-	RandomizeTrait(SoldierPropsLocks.Torso.bChecked,			eUICustomizeCat_Torso,		0);
-	RandomizeTrait(SoldierPropsLocks.Legs.bChecked,				eUICustomizeCat_Legs,		0);
+	RandomizeTrait(SoldierPropsLocks.Arms.bChecked,				eUICustomizeCat_Arms,			0);
+	RandomizeTrait(SoldierPropsLocks.Torso.bChecked,			eUICustomizeCat_Torso,			0);
+	RandomizeTrait(SoldierPropsLocks.Legs.bChecked,				eUICustomizeCat_Legs,			0);
 
 	/*
 		Conditionally randomize these (configurable in XComRandomAppearanceButton.ini).
@@ -935,7 +941,8 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 
 		Set the color (if there are no tattoos, no worries, it won't show up).
 	*/
-	RandomizeTrait(SoldierPropsLocks.TattoosColor.bChecked,			eUICustomizeCat_TattooColor,			-1);
+	RandomizeTrait(SoldierPropsLocks.TattoosColor.bChecked,		eUICustomizeCat_TattooColor,	-1);
+
 	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_LeftArmTattoos,			0, SoldierPropsLocks.TattoosLeft.bChecked,		RABConf_TattoosChance);
 	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_RightArmTattoos,		0, SoldierPropsLocks.TattoosRight.bChecked,		RABConf_TattoosChance);
 	
@@ -963,23 +970,29 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 		Store the state we just created on the buffer as well. This is to support UNDO
 		for alterations via the normal UI
 	*/
+	`log("TOTALRAND: Storing current appearance in undo buffer (if it's not there already).");
 	StoreAppearanceStateInUndoBuffer();
 }
 
 simulated function UndoAppearanceChanges(UIButton Button)
 {
-	`log("Calling Undo.");
+	local bool UndoReady;
 
 	if (UndoBuffer == none)
-		`log("There is no UndoBuffer. :(");
+		`log("RANDMAIN: There is no UndoBuffer. :(");
 
+	`log("RANDMAIN: Calling Undo.");
 	if (UndoBuffer.CanUndo())
 		UndoBuffer.Undo();
 
-	if (!UndoBuffer.CanUndo())
+	`log("RANDMAIN: Rechecking Undo (to set correct button color state).");
+	if (!UndoBuffer.CanUndo()) {
+		`log("RANDMAIN: Undo disabled.");
 		UndoButtonGreyedOut();
-	else
+	} else {
+		`log("RANDMAIN: Undo still good.");
 		UndoButtonLitUp();
+	}
 
 	ResetTheCamera();
 }
@@ -1020,20 +1033,20 @@ simulated function RandomizeTrait(bool bIsTraitLocked, EUICustomizeCategory eCat
 
 				switch (eForceDefaultColor) {
 					case NotForced:
-						`log(" * COLOR FREE FOR ALL.");
+						//`log(" * COLOR FREE FOR ALL.");
 						options = CustomizeMenuScreen.CustomizeManager.GetColorList(eCategory);
 						maxOptions = options.Length;
 						break;
 					case ArmorColors:
-						`log(" * USING DEFAULT ARMOR COLORS.");
+						//`log(" * USING DEFAULT ARMOR COLORS.");
 						maxOptions = RABConf_DefaultArmorColors;
 						break;
 					case WeaponColors:
-						`log(" * USING DEFAULT WEAPON COLORS.");
+						//`log(" * USING DEFAULT WEAPON COLORS.");
 						maxOptions = RABConf_DefaultWeaponColors;
 						break;
 					case EyeColors:
-						`log(" * USING DEFAULT EYE COLORS.");
+						//`log(" * USING DEFAULT EYE COLORS.");
 						maxOptions = RABConf_DefaultEyeColors;
 						break;
 				}
@@ -1048,7 +1061,7 @@ simulated function RandomizeTrait(bool bIsTraitLocked, EUICustomizeCategory eCat
 				maxOptions = maxRange;
 		}
 
-		`log("--> number of options =" @ maxOptions);
+		//`log("--> number of options =" @ maxOptions);
 
 		/*
 
@@ -1093,17 +1106,28 @@ simulated static function int GetTrait(UICustomize_Menu Screen, EUICustomizeCate
 	return Screen.CustomizeManager.GetCategoryIndex(eCategory);
 }
 
-simulated function ResetTheCamera()
+private function ResetTheCamera()
 {
 	/*
 		Calling this with no args helps correct the camera, which
 		becomes weird (locked, zoomed) otherwise.
 	*/
 
-	CustomizeMenuScreen.CustomizeManager.UpdateCamera();
+	//CustomizeMenuScreen.CustomizeManager.UpdateCamera();
+	class'RandomAppearanceButton_Utilities'.static.ResetTheCamera(CustomizeMenuScreen);
 }
 
+private function UpdateScreenData()
+{
+	/*
+		Calling this is necessary to cement certain changes, like
+		changes to soldier gender.
 
+		This is a local wrapper for a long-named static function.
+	*/
+
+	class'RandomAppearanceButton_Utilities'.static.UpdateScreenData(CustomizeMenuScreen);
+}
 
 simulated function int GetMaxRangeForProp(EUICustomizeCategory eCategory)
 {

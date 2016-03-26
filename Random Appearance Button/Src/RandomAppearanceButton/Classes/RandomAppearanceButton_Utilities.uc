@@ -11,6 +11,7 @@ enum ECategoryType {
 	eCategoryType_Prop,
 	eCategoryType_Color,
 	eCategoryType_Gender,
+	eCategoryType_DLC_1,
 	eCategoryType_IGNORE,
 	eCategoryType_UNKNOWN
 };
@@ -50,10 +51,6 @@ simulated static function ECategoryType GetCategoryType(const out int iCategoryI
 			case eUICustomizeCat_FacePaint:
 			case eUICustomizeCat_LeftArmTattoos:
 			case eUICustomizeCat_RightArmTattoos:
-			case eUICustomizeCat_LeftArmDeco:
-			case eUICustomizeCat_RightArmDeco:
-			case eUICustomizeCat_LeftArm:
-			case eUICustomizeCat_RightArm:
 				return eCategoryType_Prop;
 				break;
 
@@ -67,6 +64,17 @@ simulated static function ECategoryType GetCategoryType(const out int iCategoryI
 			case eUICustomizeCat_WeaponColor:
 			case eUICustomizeCat_TattooColor:
 				return eCategoryType_Color;
+				break;
+
+			/*
+				DLC_1 (Anarchy's Children) adds new deco elements that without
+				special handling will cause weird clashes with the core arms.
+			*/
+			case eUICustomizeCat_LeftArmDeco:
+			case eUICustomizeCat_RightArmDeco:
+			case eUICustomizeCat_LeftArm:
+			case eUICustomizeCat_RightArm:
+				return eCategoryType_DLC_1;
 				break;
 
 			/*
@@ -96,4 +104,25 @@ simulated static function ECategoryType GetCategoryType(const out int iCategoryI
 				return eCategoryType_UNKNOWN;
 				break;
 		}
+}
+
+
+simulated static function ResetTheCamera(UICustomize_Menu Screen)
+{
+	/*
+		Calling this with no args helps correct the camera, which
+		becomes weird (locked, zoomed) otherwise.
+	*/
+
+	Screen.CustomizeManager.UpdateCamera();
+}
+
+simulated static function UpdateScreenData(UICustomize_Menu Screen)
+{
+	/*
+		Calling this is necessary to cement certain changes, like
+		changes to soldier gender.
+	*/
+
+	Screen.UpdateData();
 }

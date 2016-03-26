@@ -4,7 +4,10 @@
 
 	When one of the generator buttons in the mod is clicked, those callbacks
 	create 'appearance states' which are stored on the undo buffer up to a max
-	of MAX_UNDO_BUFFER_SIZE (defined below).
+	of MAX_UNDO_BUFFER_SIZE (defined below). The most recent state on the buffer
+	is as recent as possible (the mod stores before AND after a new appearance
+	is generated, but doesn't store duplicates) so that manual changes to the
+	generated appearances can be undid.
 
 	As states are generated they're pushed onto the buffer; the most recent state is
 	at the FRONT of the buffer (index Buffer.Length - 1).
@@ -12,20 +15,15 @@
 	If adding states to the buffer would exceed max length, the BACK of the buffer
 	(index 0) is dropped to make space.
 
-	NOTES
+	Due to what appears to be a race condition between me and the Customize Menu
+	itself, the undo button can't work until AFTER one of the mod's appearance
+	generating buttons has been pressed. It's a bummer but that's the way of it.
 
-	If the buffer is empty (either because it hasn't been initialized OR because
-	the user has clicked Undo and backstepped through the entire buffer) then
-	the button should be disabled. Since this doesn't handle the button (the
-	screen listener will) it should have a function that reports whether the
-	array (of queues) is empty or not.
+	WOULD BE NICE
 
-	Undo can safely be spam-called with an empty buffer with no ill effect, so
-	the disable is really just to communicate to the user what's up.
+	If the button could be greyed out when it can't be used, though this is
+	proving difficult with the way things are now.
 
-	TODO.
-
-	The Undo button needs to grey-out when it won't work.
 */
 
 class RandomAppearanceButton_UndoBuffer extends Object
@@ -50,17 +48,33 @@ const MAX_UNDO_BUFFER_SIZE = 10;
 
 simulated function Init(const out UICustomize_Menu Screen)
 {
-	ClearTheBuffer();
-
 	CustomizeMenuScreen = Screen;
 
-	`log("");
-	`log("* * * * * * * * * * * * * * * * * *");
-	`log("");
-	`log("UNDO BUFFER: Initialized.");
-	`log("");
-	`log("* * * * * * * * * * * * * * * * * *");
-	`log("");
+	/*
+		If I init here, the intial snapsnot NEVER matches the soldier
+		even if no changes have been made at all: the mod ALWAYS detects
+		manual changes because this stored state doesn't actually reflect
+		what the soldier actually looks like.
+
+		This doesn't happen otherwise; appearance snapshots do typically
+		reflect precisely what the soldier looks like.
+
+		I believe when I init the buffer here I run into a race condition
+		with the game: I think my class inits and is ready prior to the
+		soldier actually loading in. The result is that clicking the Undo
+		button prior to any changes DETECTS CHANGES because the state
+		snapshot is taken of a partially or unloaded soldier.
+
+		I need to lazily initialize (at the last second) instead of doing
+		it right off the bat. This means my undo button won't work until
+		one of my buttons has been pressed, unless I can find a way init
+		after the soldier's loaded into the customize menu.
+
+		Or I could set up a dumb timer to just wait but that seems super
+		error prone and dumb.
+	*/
+
+	//InitTheBuffer();
 }
 
 simulated function bool BufferIsEmpty()
@@ -73,14 +87,69 @@ simulated function bool BufferIsEmpty()
 		return false;
 }
 
+simulated function bool AppearanceStateIsEmpty(AppearanceState CurrentState)
+{
+
+	/*
+		structs are special (they're not Objects nor Actors) and thus
+		can't be set or compared to None, so here's special handling
+		to deal with that.
+	*/
+
+	if (CurrentState.Trait.Length == 0)
+		return true;
+	else
+		return false;
+
+}
+
+simulated function bool NoChanges()
+{
+	local AppearanceState CurrentState;
+	local AppearanceState BufferFront;
+
+	`log("UNDO BUFFER: Taking snapshot in NoChanges().");
+	CurrentState = AppearanceStateSnapshot(CustomizeMenuScreen);
+	BufferFront = GetFrontOfBuffer();
+
+	if ( CompareAppearanceStates(CurrentState, BufferFront) ) {
+		`log("UNDO BUFFER: No changes.");
+		return true;
+	} else {
+		`log("UNDO BUFFER: Changes were made.");
+		return false;
+	}
+
+}
+
+simulated function bool ChangesWereMade()
+{
+	return !NoChanges();
+}
+
 simulated function bool CanUndo()
 {
-	if (!BufferIsEmpty())
-		`log("UNDO BUFFER: Able to undo (there's stuff in the buffer).");
-	else
-		`log("UNDO BUFFER: Can't undo (the buffer is empty).");
+	/*
+		If there's something in the buffer we can undo.
+	*/
 
-	return !BufferIsEmpty();
+	if (BufferIsEmpty()) {
+		`log("UNDO BUFFER: CAN'T UNDO. Buffer's empty.");
+		return false;
+	} else if (Buffer.Length == 1 && NoChanges()) {
+		`log("UNDO BUFFER: WON'T UNDO. Nothing to do: no changes, only one item in the buffer.");
+		return false;
+	} else if (Buffer.Length == 1 && ChangesWereMade()) {
+		`log("UNDO BUFFER: CAN UNDO. Changes detected and one item in the buffer.");
+		return true;
+	} else if (NoChanges()) {
+		`log("UNDO BUFFER: CAN UNDO. No changes detected. Items in buffer:" @ Buffer.Length @ ".");
+		return true;
+	} else if (ChangesWereMade()) {
+		`log("UNDO BUFFER: CAN UNDO. Changes detected. Items in buffer:" @ Buffer.Length @ ".");
+		return true;
+	}
+
 }
 
 simulated function PushOnToBuffer(const out AppearanceState StateToStore)
@@ -92,52 +161,77 @@ simulated function PushOnToBuffer(const out AppearanceState StateToStore)
 	Buffer.AddItem(StateToStore);
 }
 
-simulated function AppearanceState PopBackOffTheBuffer()
+simulated function PopBackOffTheBuffer()
 {
-	local AppearanceState Back;
 
-	Back = Buffer[0];
+	if (!BufferIsEmpty())
+		Buffer.Remove(0, 1);
 
-	Buffer.Remove(0, 1);
+	if (BufferIsEmpty())
+		StoreCurrentState();
 
-	return Back;
 }
 
-simulated function AppearanceState PopFrontOffTheBuffer()
+simulated function PopFrontOffTheBuffer()
 {
-	local AppearanceState Front;
 
-	Front = Buffer[Buffer.Length - 1];
-	Buffer.Remove(Buffer.Length - 1, 1);
+	if (!BufferIsEmpty())
+		Buffer.Remove(Buffer.Length - 1, 1);
 
-	return Front;
+	if (BufferIsEmpty())
+		StoreCurrentState();
+
 }
 
 simulated function AppearanceState GetFrontOfBuffer()
 {
-	return Buffer[Buffer.Length - 1];
+	local AppearanceState Front;
+
+	/*
+		I have to return SOMETHING as structs can't be "None".
+
+		If you use this function make sure you test it with
+		AppearanceStateIsEmpty() or otherwise check what you
+		just asked for.
+	*/
+
+	if (!BufferIsEmpty())
+		Front = Buffer[Buffer.Length - 1];
+
+	return Front;
 }
 
-simulated function ClearTheBuffer()
+simulated function InitTheBuffer()
 {
 	Buffer.Length = 0;
+
+	if (BufferIsEmpty())
+		PushCurrentStateOntoBuffer();
+}
+
+simulated function PushCurrentStateOntoBuffer()
+{
+	/*
+		YOU PROBABLY DON'T WANT TO CALL THIS.
+
+		Call StoreCurrentState() instead.
+	*/
+
+	local AppearanceState CurrentState;
+
+	`log("UNDO BUFFER: Taking snapshot for push onto buffer.");
+	CurrentState = AppearanceStateSnapshot(CustomizeMenuScreen);
+	PushOnToBuffer(CurrentState);
 }
 
 simulated function StoreCurrentState()
 {
-	local AppearanceState	CurrentState;
-	local AppearanceState	BufferFront;
-
 	/*
 		Iterate over all trait categories, get their current values, store them
 		into an AppearanceState struct, then push it onto the buffer.
 	*/
 
 	`log("UNDO BUFFER: Storing current state.");
-
-	CurrentState = AppearanceStateSnapshot(CustomizeMenuScreen);
-	BufferFront = GetFrontOfBuffer();
-
 
 	/*
 		We only want to store the current state if it's NOT identical to the
@@ -153,9 +247,12 @@ simulated function StoreCurrentState()
 		you'd expect it to do.
 	*/
 
-	if ( !CompareAppearanceStates( CurrentState, BufferFront) ) {
+	if ( BufferIsEmpty() ) {
+		`log("UNDO BUFFER: Buffer is emtpy; storing current state.");
+		PushCurrentStateOntoBuffer();
+	} else if ( ChangesWereMade() ) {
 		`log("UNDO BUFFER: Current state isn't at the front of the buffer; storing it.");
-		PushOnToBuffer(CurrentState);
+		PushCurrentStateOntoBuffer();
 	} else {
 		`log("UNDO BUFFER: CurrentState matches BufferFront, NOT STORING.");
 	}
@@ -166,11 +263,47 @@ simulated function StoreCurrentState()
 
 simulated static function AppearanceState AppearanceStateSnapshot(const out UICustomize_Menu Screen)
 {
-	local AppearanceState	CurrentState;
-	local int				iCategoryIndex;
+	local AppearanceState			CurrentState;
+	local int						iTrait;
+	local int						iCategoryIndex;
+	local EUICustomizeCategory		eCatIndex;
 
-	for (iCategoryIndex = 0; iCategoryIndex <= eUICustomizeCat_MAX; iCategoryIndex++)
-		CurrentState.Trait[iCategoryIndex] = class'RandomAppearanceButton'.static.GetTrait(Screen, EUICustomizeCategory(iCategoryIndex));
+	/*
+		Populate CurrentState (take a "snapshot") of the appearance then return it.
+	*/
+
+	`log("UNDO BUFFER: In AppearanceStateSnapshot().");
+
+	for (iCategoryIndex = 0; iCategoryIndex <= eUICustomizeCat_MAX; iCategoryIndex++) {
+		switch ( GetCategoryType(iCategoryIndex) ) {
+			case eCategoryType_Prop:
+			case eCategoryType_Color:
+			case eCategoryType_Gender:
+			case eCategoryType_DLC_1:
+				iTrait = class'RandomAppearanceButton'.static.GetTrait(Screen, EUICustomizeCategory(iCategoryIndex));
+
+				if (iCategoryIndex == eUICustomizeCat_WeaponColor && iTrait == -1) {
+					/*
+						Upon soldier creation the weapon color is often (maybe always) -1 which
+						is reflected in the UI as the default color; this really messes with my
+						mod here, so when I take a snapshot and find the default color, I force
+						set it to the color in the color picker.
+
+						I may want to make this configurable.
+					*/
+
+					iTrait = 3;
+				}
+
+				eCatIndex = EUICustomizeCategory(iCategoryIndex);
+				`log("            " @ eCatIndex @ "val =" @ iTrait);
+				CurrentState.Trait[iCategoryIndex] = iTrait;
+				break;
+
+			default:
+				break;
+		}
+	}
 
 	return CurrentState;
 }
@@ -178,7 +311,8 @@ simulated static function AppearanceState AppearanceStateSnapshot(const out UICu
 
 simulated static function bool CompareAppearanceStates(const out AppearanceState left, const out AppearanceState right)
 {
-	local int iCategoryIndex;
+	local int					iCategoryIndex;
+	local EUICustomizeCategory	eCatIndex;
 
 	/*
 		Iterate over all traits, compare the ones we care about; if any of them are changed,
@@ -190,32 +324,37 @@ simulated static function bool CompareAppearanceStates(const out AppearanceState
 	`log("UNDO BUFFER: in CompareAppearanceStates");
 
 	for (iCategoryIndex = 0; iCategoryIndex <= eUICustomizeCat_MAX; iCategoryIndex++){
-		switch( class'RandomAppearanceButton_Utilities'.static.GetCategoryType(iCategoryIndex) ) {
+		switch( GetCategoryType(iCategoryIndex) ) {
 			case eCategoryType_Prop:
 			case eCategoryType_Color:
 			case eCategoryType_Gender:
+			case eCategoryType_DLC_1:
+				eCatIndex = EUICustomizeCategory(iCategoryIndex);
 				if (left.Trait[iCategoryIndex] != right.Trait[iCategoryIndex]) {
-					`log("UNDO BUFFER: Compare" @ string(iCategoryIndex) @ "NO MATCH:");
+					`log("UNDO BUFFER: Compare" @ eCatIndex @ "NO MATCH. left=" @ left.Trait[iCategoryIndex] @ ", right=" @ right.Trait[iCategoryIndex]);
 					return false;
-				} else {
-					`log("UNDO BUFFER: Compare" @ string(iCategoryIndex) @ "match");
-				}
+				} /*else {
+					`log("UNDO BUFFER: Compare" @ eCatIndex @ "match. left=" @ left.Trait[iCategoryIndex] @ ", right=" @ right.Trait[iCategoryIndex]);
+				}*/
 				break;
 
 			case eCategoryType_IGNORE:
 			case eCategoryType_UNKNOWN:
 			default:
-				`log("UNDO BUFFER: Compare" @ string(iCategoryIndex) @ "ignored/unknown");
+				//`log("UNDO BUFFER: Compare" @ string(iCategoryIndex) @ "ignored/unknown");
 				break;
 		}
 	}
 
+	`log("UNDO BUFFER: COMPARE: FULL MATCH.");
 	return true;
 }
 
 simulated static function ApplyAppearanceStateSnapshot(const out UICustomize_Menu Screen, const out AppearanceState AppearanceSnapshot/*, const out SoldierPropsLock PropCheckboxes*/)
 {
 	local int		iCategoryIndex;
+	local int		eCatType;
+	local int		iTrait;
 	local int		iDirection;
 	local bool		bSkipThisTrait;
 
@@ -239,7 +378,11 @@ simulated static function ApplyAppearanceStateSnapshot(const out UICustomize_Men
 	Screen.UpdateData();	
 
 	for (iCategoryIndex = 0; iCategoryIndex <= eUICustomizeCat_MAX; iCategoryIndex++) {
-		switch (class'RandomAppearanceButton_Utilities'.static.GetCategoryType(iCategoryIndex))
+
+		eCatType = GetCategoryType(iCategoryIndex);
+		iTrait = AppearanceSnapshot.Trait[iCategoryIndex];
+
+		switch (eCatType)
 		{
 			/*
 				Non-color appearance props and attributes require a "Direction"
@@ -248,6 +391,23 @@ simulated static function ApplyAppearanceStateSnapshot(const out UICustomize_Men
 			case eCategoryType_Prop:
 				bSkipThisTrait = false;
 				iDirection = 0;
+				break;
+
+			/*
+				Anarchy's Chilren's new arm slots will override in-place arms
+				if they're set...so we only set them if they're non-zero in
+				the snapshot. (Hopefully that's okay, but this might lead to
+				weirdness if either the game or I don't set those slots to zero
+				when the vanilla arms are explicitly set.)
+
+				Without this, any Undo results in the arms becoming DLC 1 arms.
+			*/
+			case eCategoryType_DLC_1:
+				iDirection = 0;
+				if (iTrait == 0)
+					bSkipThisTrait = true;
+				else
+					bSkipThisTrait = false;
 				break;
 
 			/*
@@ -276,7 +436,7 @@ simulated static function ApplyAppearanceStateSnapshot(const out UICustomize_Men
 		}
 		
 		if (!bSkipThisTrait) {
-			class'RandomAppearanceButton'.static.ForceSetTrait(Screen, EUICustomizeCategory(iCategoryIndex), iDirection, AppearanceSnapshot.Trait[iCategoryIndex]);
+			class'RandomAppearanceButton'.static.ForceSetTrait(Screen, EUICustomizeCategory(iCategoryIndex), iDirection, iTrait);
 		}
 
 	}
@@ -287,11 +447,14 @@ simulated function bool Undo()
 	local AppearanceState		CurrentAppearance;
 	local AppearanceState		BufferFront;
 
+	`log("");
+	`log("* * * * * * * * * * * * * * * * * * * * *");
+	`log("");
 	`log("UNDO BUFFER: In Undo.");
-	`log("UNDO BUFFER: Buffer size now" @ Buffer.Length);
-
-	if (Buffer.Length == 0)
-		return false;
+	`log("             Buffer size now" @ Buffer.Length);
+	`log("");
+	`log("* * * * * * * * * * * * * * * * * * * * *");
+	`log("");
 
 	/*
 		If there have been state changes since the last snapshot, that means
@@ -318,18 +481,44 @@ simulated function bool Undo()
 
 		SECOND UNDO CLICK wants to get back to [A], so we dump [B] then
 		apply [A].
+
+		EDGE CASE: buffer size 1
+
+		If buffer size is 1 and there are Changes, normal flow is fine.
+
+		If buffer size is 1 and there are No Changes, normal flow will
+		break stuff (as it will try to rollback to a nonexistant state)
+		so bail.
+
+		EDGE CASE: buffer size 0
+
+		We should never get here; the current state with no changes should
+		always be in the buffer, implying min size of 1.
 	*/
 
+	if ( !CanUndo() ) {
+		`log("UNDO BUFFER: Can't Undo.");
+		return false;
+	} /*else if ( Buffer.Length == 1 && NoChanges() ) { // is NoChanges() not working?
+		`log("UNDO BUFFER: Nothing to undo.");
+		return false;
+	}*/
+
 	// local references to conform to further const out params in calls.
+	`log("UNDO BUFFER: Taking snapshot in Undo().");
 	CurrentAppearance = AppearanceStateSnapshot(CustomizeMenuScreen);
+	`log("UNDO BUFFER: Getting front of buffer.");
 	BufferFront = GetFrontOfBuffer();
 
-	if ( CompareAppearanceStates(CurrentAppearance, BufferFront) ) {
+	`log("UNDO BUFFER: Going to try and Undo now.");
+	if ( NoChanges() ) {
 		// No state changes: dump *then* apply.
+		`log("No manual changes detected.");
 		PopFrontOffTheBuffer(); // This state is already applied and we want to UNDO it.
 		BufferFront = GetFrontOfBuffer();
 		ApplyAppearanceStateSnapshot(CustomizeMenuScreen, BufferFront);
 	} else {
+		`log("Manual changes detected.");
 		// Nothing to pop as the thing we want to replace isn't in the buffer.
 		ApplyAppearanceStateSnapshot(CustomizeMenuScreen, BufferFront);
 	}
@@ -337,6 +526,13 @@ simulated function bool Undo()
 	`log("UNDO BUFFER: Buffer size now" @ Buffer.Length);
 
 	return true;
+}
+
+private static function int GetCategoryType(const out int iCategoryIndex)
+{
+	// Just a wrapper for a very long static function name.
+
+	return class'RandomAppearanceButton_Utilities'.static.GetCategoryType(iCategoryIndex);
 }
 
 defaultproperties
