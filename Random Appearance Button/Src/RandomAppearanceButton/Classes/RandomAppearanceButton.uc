@@ -149,7 +149,7 @@ var RandomAppearanceButton_UndoBuffer	UndoBuffer;
 const BUTTON_OFFSET_X			= -193;
 const BUTTON_OFFSET_Y			= 150;
 
-const BUTTON_LABEL_FONTSIZE		= 24;	// smaller text
+const BUTTON_LABEL_FONTSIZE		= 22;	// smaller text
 const BUTTON_HEIGHT				= 30;	// guesstimate, also smaller
 const BUTTON_SPACING			= 3;
 
@@ -209,13 +209,13 @@ simulated function OnLoseFocus(UIScreen Screen)
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 simulated function InitRandomAppearanceButtonUI()
 {	
-	ToggleOptionsVisibilityButton		= CreateButton('RandomAppearanceToggle',	"Toggle Options",		ToggleChecklistVisiblity,				class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -154, -165);
+	ToggleOptionsVisibilityButton		= CreateButton('RandomAppearanceToggle',	"Toggle Options",		ToggleChecklistVisiblity,				class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -150, -165);
 
-	UndoButton							= CreateButton('UndoButton',				"Undo",					UndoAppearanceChanges,					class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -307, -165);
+	UndoButton							= CreateButton('UndoButton',				"Undo",					UndoAppearanceChanges,					class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -303, -165);
 	UndoButtonGreyedOut(); // The buffer starts empty.
 
-	RandomAppearanceButton				= CreateButton('RandomAppearanceButton',	"Random Appearance",	GenerateNormalLookingRandomAppearance,	class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -207, -130);
-	TotallyRandomButton					= CreateButton('TotallyRandomButton',		"Totally Random", 		GenerateTotallyRandomAppearance,		class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -160, -95);
+	RandomAppearanceButton				= CreateButton('RandomAppearanceButton',	"Random Appearance",	GenerateNormalLookingRandomAppearance,	class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -190, -130);
+	TotallyRandomButton					= CreateButton('TotallyRandomButton',		"Totally Random", 		GenerateTotallyRandomAppearance,		class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -150, -95);
 
 	InitOptionsPanel();
 }
@@ -238,7 +238,7 @@ simulated function InitOptionsPanel()
 		Buttons on the panel.
 	*/
 
-	ToggleGenderButton	= CreateButton('ToggleGender',				"Switch Gender",		ToggleGender,	AnchorPos, -234, CHECKBOX_OFFSET_Y - BUTTON_HEIGHT - BUTTON_SPACING); // xoffset prev -154
+	ToggleGenderButton	= CreateButton('ToggleGender',				"Switch Gender",		ToggleGender,	AnchorPos, -230, CHECKBOX_OFFSET_Y - BUTTON_HEIGHT - BUTTON_SPACING); // xoffset prev -154
 	ToggleGenderButton.SetDisabled(false, "Changing gender will clear the undo buffer.");
 	ToggleGenderButton.Hide();
 
