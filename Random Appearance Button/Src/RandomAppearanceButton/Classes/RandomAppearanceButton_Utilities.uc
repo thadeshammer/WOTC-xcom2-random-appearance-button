@@ -126,6 +126,16 @@ simulated static function int PropDirection(ECategoryType eCatType)
 	}
 }
 
+simulated static function string CategoryName(EUICustomizeCategory eCategory)
+{
+	local string strPropName;
+
+	strPropName = string(eCategory);
+	strPropName = Repl(strPropName, "eUICustomizeCat_", "", true);
+
+	return strPropName;
+}
+
 simulated static function ResetTheCamera(UICustomize_Menu Screen)
 {
 	/*

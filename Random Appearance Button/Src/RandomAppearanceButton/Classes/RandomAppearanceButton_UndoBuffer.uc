@@ -24,6 +24,24 @@
 	If the button could be greyed out when it can't be used, though this is
 	proving difficult with the way things are now.
 
+	TODO/BUGS
+
+	Sometimes undo gets stuck. (I may have just figured this out, keep reading.)
+
+	The DLC arm slots are a huge pain. Sometimes when clicking Undo, the log
+	show that it seems to know what arm slot item SHOULD appear, but instead
+	we see random ones. (Bullets instead of spikes all of a sudden.)
+
+	Is the problem with ApplyAppearanceSnapshot? That's my guess; I may need
+	extra-special handling (perhaps I need to add a flag) to know when to
+	apply DLC slot items or when to just skip them (as applying will overwrite
+	the vanilla arms).
+
+	Right now I'm setting arms to -1 (in the main class) as a flag that there
+	are special arms set, which I blow over as I Undo...however this can get
+	us stuck sometimes (as -1 doesn't match with 0) in Compare. (Now that I
+	typed that out, at least the getting stuck bug  makes more sense.)
+
 */
 
 class RandomAppearanceButton_UndoBuffer extends Object
@@ -109,7 +127,7 @@ simulated function bool NoChanges()
 	local AppearanceState BufferFront;
 
 	`log("UNDO BUFFER: Taking snapshot in NoChanges().");
-	CurrentState = AppearanceStateSnapshot(CustomizeMenuScreen);
+	CurrentState = TakeAppearanceSnapshot(CustomizeMenuScreen);
 	BufferFront = GetFrontOfBuffer();
 
 	if ( CompareAppearanceStates(CurrentState, BufferFront) ) {
@@ -220,7 +238,7 @@ simulated function PushCurrentStateOntoBuffer()
 	local AppearanceState CurrentState;
 
 	`log("UNDO BUFFER: Taking snapshot for push onto buffer.");
-	CurrentState = AppearanceStateSnapshot(CustomizeMenuScreen);
+	CurrentState = TakeAppearanceSnapshot(CustomizeMenuScreen);
 	PushOnToBuffer(CurrentState);
 }
 
@@ -261,7 +279,7 @@ simulated function StoreCurrentState()
 }
 
 
-simulated static function AppearanceState AppearanceStateSnapshot(const out UICustomize_Menu Screen)
+simulated static function AppearanceState TakeAppearanceSnapshot(const out UICustomize_Menu Screen)
 {
 	local AppearanceState			CurrentState;
 	local int						iTrait;
@@ -272,9 +290,10 @@ simulated static function AppearanceState AppearanceStateSnapshot(const out UICu
 		Populate CurrentState (take a "snapshot") of the appearance then return it.
 	*/
 
-	`log("UNDO BUFFER: In AppearanceStateSnapshot().");
+	`log("UNDO BUFFER: In TakeAppearanceSnapshot().");
 
 	for (iCategoryIndex = 0; iCategoryIndex <= eUICustomizeCat_MAX; iCategoryIndex++) {
+
 		switch ( GetCategoryType(iCategoryIndex) ) {
 			case eCategoryType_Prop:
 			case eCategoryType_Color:
@@ -296,7 +315,11 @@ simulated static function AppearanceState AppearanceStateSnapshot(const out UICu
 				}
 
 				eCatIndex = EUICustomizeCategory(iCategoryIndex);
-				`log("            " @ eCatIndex @ "val =" @ iTrait);
+
+				if (iCategoryIndex >= eUICustomizeCat_LeftArm && iCategoryIndex <= eUICustomizeCat_RightArmDeco ||
+					iCategoryIndex == eUICustomizeCat_Arms)
+					`log("   >" @ iTrait @ class'RandomAppearanceButton_Utilities'.static.CategoryName(eCatIndex) );
+
 				CurrentState.Trait[iCategoryIndex] = iTrait;
 				break;
 
@@ -350,7 +373,7 @@ simulated static function bool CompareAppearanceStates(const out AppearanceState
 	return true;
 }
 
-simulated static function ApplyAppearanceStateSnapshot(const out UICustomize_Menu Screen, const out AppearanceState AppearanceSnapshot/*, const out SoldierPropsLock PropCheckboxes*/)
+simulated static function ApplyAppearanceSnapshot(const out UICustomize_Menu Screen, const out AppearanceState AppearanceSnapshot/*, const out SoldierPropsLock PropCheckboxes*/)
 {
 	local int		iCategoryIndex;
 	local int		eCatType;
@@ -397,11 +420,11 @@ simulated static function ApplyAppearanceStateSnapshot(const out UICustomize_Men
 			*/
 			case eCategoryType_Prop:
 
-				//if (iCategoryIndex == eUICustomizeCat_Arms && AppearanceSnapshot.Trait[eUICustomizeCat_Arms] == -1)
-				//	bSkipThisTrait = true;
-				//else
-					bSkipThisTrait = false;
-				//break;
+				if (iCategoryIndex == eUICustomizeCat_Arms && AppearanceSnapshot.Trait[eUICustomizeCat_Arms] == -1)
+					iTrait = 0; // set arms to something not -1, it'll be overridden by the DLC arms.
+				
+				bSkipThisTrait = false;
+				break;
 
 			/*
 				Anarchy's Chilren's new arm slots will override in-place arms
@@ -509,7 +532,7 @@ simulated function bool Undo()
 
 	// local references to conform to further const out params in calls.
 	`log("UNDO BUFFER: Taking snapshot in Undo().");
-	CurrentAppearance = AppearanceStateSnapshot(CustomizeMenuScreen);
+	CurrentAppearance = TakeAppearanceSnapshot(CustomizeMenuScreen);
 	`log("UNDO BUFFER: Getting front of buffer.");
 	BufferFront = GetFrontOfBuffer();
 
@@ -519,11 +542,11 @@ simulated function bool Undo()
 		`log("No manual changes detected.");
 		PopFrontOffTheBuffer(); // This state is already applied and we want to UNDO it.
 		BufferFront = GetFrontOfBuffer();
-		ApplyAppearanceStateSnapshot(CustomizeMenuScreen, BufferFront);
+		ApplyAppearanceSnapshot(CustomizeMenuScreen, BufferFront);
 	} else {
 		`log("Manual changes detected.");
 		// Nothing to pop as the thing we want to replace isn't in the buffer.
-		ApplyAppearanceStateSnapshot(CustomizeMenuScreen, BufferFront);
+		ApplyAppearanceSnapshot(CustomizeMenuScreen, BufferFront);
 	}
 
 	`log("UNDO BUFFER: Buffer size now" @ Buffer.Length);
