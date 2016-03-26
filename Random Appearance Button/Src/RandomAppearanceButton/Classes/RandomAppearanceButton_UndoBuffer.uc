@@ -22,25 +22,16 @@
 	WOULD BE NICE
 
 	If the button could be greyed out when it can't be used, though this is
-	proving difficult with the way things are now.
+	proving difficult with the way things are now. (The race condition described
+	above kicks this right in the face.)
 
 	TODO/BUGS
 
-	Sometimes undo gets stuck. (I may have just figured this out, keep reading.)
+	(FIXED) Sometimes undo gets stuck.
 
-	The DLC arm slots are a huge pain. Sometimes when clicking Undo, the log
-	show that it seems to know what arm slot item SHOULD appear, but instead
-	we see random ones. (Bullets instead of spikes all of a sudden.)
-
-	Is the problem with ApplyAppearanceSnapshot? That's my guess; I may need
-	extra-special handling (perhaps I need to add a flag) to know when to
-	apply DLC slot items or when to just skip them (as applying will overwrite
-	the vanilla arms).
-
-	Right now I'm setting arms to -1 (in the main class) as a flag that there
-	are special arms set, which I blow over as I Undo...however this can get
-	us stuck sometimes (as -1 doesn't match with 0) in Compare. (Now that I
-	typed that out, at least the getting stuck bug  makes more sense.)
+	This was tied to incorrectly determining state changes, ultimately fixed
+	with added Utility functions which determine whether DLC_1 components are
+	involved.
 
 */
 
@@ -96,6 +87,9 @@ simulated function Init(const out UICustomize_Menu Screen)
 
 		Or I could set up a dumb timer to just wait but that seems super
 		error prone and dumb.
+
+		I do WANT to init here, which is why this breadcrumb remains
+		(along with this oversized breadcrumb).
 	*/
 
 	//InitTheBuffer();
@@ -233,7 +227,7 @@ simulated function InitTheBuffer()
 		PushCurrentStateOntoBuffer();
 }
 
-simulated function PushCurrentStateOntoBuffer(bool bHasDLC1Arms = false)
+simulated function PushCurrentStateOntoBuffer()
 {
 	/*
 		YOU PROBABLY DON'T WANT TO CALL THIS.
@@ -246,9 +240,8 @@ simulated function PushCurrentStateOntoBuffer(bool bHasDLC1Arms = false)
 	`log("UNDO BUFFER: Taking snapshot for push onto buffer.");
 
 	CurrentState = TakeAppearanceSnapshot(CustomizeMenuScreen);
-	CurrentState.bHasDLC1components = bHasDLC1Arms;
 
-	if (bHasDLC1Arms)
+	if (CurrentState.bHasDLC1components)
 		`log("UNDO BUFFER: Soldier has DLC1 arms.");
 	else
 		`log("UNDO BUFFER: Soldier does NOT have DLC1 arms.");
@@ -256,7 +249,7 @@ simulated function PushCurrentStateOntoBuffer(bool bHasDLC1Arms = false)
 	PushOnToBuffer(CurrentState);
 }
 
-simulated function StoreCurrentState(optional bool bHasDLC1Arms = false)
+simulated function StoreCurrentState()
 {
 	/*
 		Iterate over all trait categories, get their current values, store them
@@ -281,10 +274,10 @@ simulated function StoreCurrentState(optional bool bHasDLC1Arms = false)
 
 	if ( BufferIsEmpty() ) {
 		`log("UNDO BUFFER: Buffer is emtpy; storing current state.");
-		PushCurrentStateOntoBuffer(bHasDLC1Arms);
+		PushCurrentStateOntoBuffer();
 	} else if ( ChangesWereMade() ) {
 		`log("UNDO BUFFER: Current state isn't at the front of the buffer; storing it.");
-		PushCurrentStateOntoBuffer(bHasDLC1Arms);
+		PushCurrentStateOntoBuffer();
 	} else {
 		`log("UNDO BUFFER: CurrentState matches BufferFront, NOT STORING.");
 	}

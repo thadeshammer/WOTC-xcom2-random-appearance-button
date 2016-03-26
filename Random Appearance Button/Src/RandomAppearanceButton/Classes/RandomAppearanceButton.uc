@@ -10,17 +10,19 @@
 	I made a button that toggles visiblity of these boxes.
 
 	For convenience (and because it made sense) I also added a Switch Gender button to
-	the UI.
+	the UI. By request I added an Undo button as well.
 
 	TODO.
-
-	Add an UNDO button with some amount of buffered choices. (Maybe five?)
-
-	The UNDO button should appear disabled when it is disabled.
-
+	
 	Add a lot more configuration to the INI (e.g. allow all options to be assigned
 	their own % chance for both buttons, maybe even allow the buttons to be renamed
 	by the user which I'll need to at least cap at a certain length).
+
+	(DONE - 2016.03.26) Add an UNDO button with some amount of buffered choices. (Maybe five?)
+
+	(CANTFIX - 2016.03.26) The UNDO button should appear disabled when it is disabled. (Firaxis bug
+	prevents this, unfortunately. Since color pickers don't proc focus events I can't
+	respond to them, and thus can't alter undo button color as I wish I could.)
 
 	(DONE) Figure out how to access and set the new Anarchy's Children DLC deco slots.
 		(WONTFIX) There's a ValidatePartSelection() function which is intended to check against
@@ -43,31 +45,11 @@
 
 	BUGS.
 
-	UNDO VS NORMAL UI MODIFICATIONS
+	(FIXED) UNDO VS NORMAL UI MODIFICATIONS; UNDO VS GENDER
 
-	Changed the label from "Undo" to "Recall" so it's not quite so weird that the button
-	doesn't track or affect normal user changers via the UI. What I **could** do is check
-	the current state vs the last stored state each time and if it's different just
-	rollback to the state and NOT pop it. That could work.
+	Undo will now undo manual modifications (via the normal UI) including gender.
 
-	UNDO VS GENDER
-
-	Undo doesn't toggle Gender (maybe it should) and I leveraged this to maintain
-	appearance across gender switches which can NEVER work consistently *because*
-	there isn't a one-to-one mapping of props between the genders (e.g. females
-	have more hairstyles than men, and the ones that match don't have matching
-	indicies). 
-	
-	Ways to fix this (favorite to least favorite):
-	* Toggle Gender adds a state to the buffer...this *might* work but could overfill
-	the buffer pretty quickly; might be a good reason to increase the buffer size.
-	* separate undo buffers for male/female;
-	* Toggle Gender button wipes the buffer (undesirable);
-	* do my best to map parts by name to their matches inspite of differing indicies
-	(ton of work, big pain, probably won't look like it works ever);
-	* just leave it as is (lazy, it seems broken this way).
-
-	When a color picker is activated (e.g. Eye Color, Hair color) vs. a prop picker
+	(FIRAXIS BUG) When a color picker is activated (e.g. Eye Color, Hair color) vs. a prop picker
 	(e.g. Hairstyle, Face) the RandomAppearanceButton UI is not hidden as it should be;
 	does this mean we don't get Receive and Lose Focus events for color pickers?
 		* Correct: the class receives TWO Lose Focus events when a prop picker comes
@@ -493,25 +475,17 @@ simulated function ToggleGender(UIButton Button)
 
 	/*
 		Count this as a state change so UNDO can handle it.
-
-		NOTE The undo buffer gets all sorts of confused when it tries to track gender,
-		so for now it will just wipe the buffer clean to hit this button.
 	*/
 
-	// TODO: handle the DLC1 arms flag; will need to ask the current state and plug that in here
-	StoreAppearanceStateInUndoBuffer( class'RandomAppearanceButton_Utilities'.static.SoldierHasDLC1Arms(CustomizeMenuScreen) ); 
+	StoreAppearanceStateInUndoBuffer(); 
 
 	ForceSetTrait(CustomizeMenuScreen, eUICustomizeCat_Gender, newGender);	
-	//CustomizeMenuScreen.UpdateData(); // If I don't do this, things can get weird.
 	UpdateScreenData();
-
-	//UndoBuffer.ClearTheBuffer();
-	//UndoButtonGreyedOut();
 }
 
-simulated function StoreAppearanceStateInUndoBuffer(bool bDLC1ArmComponents)
+simulated function StoreAppearanceStateInUndoBuffer()
 {
-	UndoBuffer.StoreCurrentState(bDLC1ArmComponents);
+	UndoBuffer.StoreCurrentState();
 	UndoButtonLitUp();
 }
 
@@ -633,7 +607,7 @@ simulated function GenerateTotallyRandomAppearance(UIButton Button)
 	`log("");
 	
 	`log("TOTALRAND: Storing current appearance in undo buffer (if it's not there already).");
-	StoreAppearanceStateInUndoBuffer( class'RandomAppearanceButton_Utilities'.static.SoldierHasDLC1Arms(CustomizeMenuScreen) );
+	StoreAppearanceStateInUndoBuffer();
 
 	// Core customization menu
 	RandomizeTrait(eUICustomizeCat_Face,				true);
@@ -667,18 +641,15 @@ simulated function GenerateTotallyRandomAppearance(UIButton Button)
 	if (isDLC_1_Installed)
 	{
 		`log("DLC1 installed.");
-		bThisGeneratedAppearanceHasDLC1Arms = HandleDLC1();
-
+		HandleDLC1();
 	} else {
-		bThisGeneratedAppearanceHasDLC1Arms = false;
-
 		`log("No DLC, rolling arms as normal.");
 		RandomizeTrait(eUICustomizeCat_Arms,			true);
 	}
 	`log("DONE WITH ARMS.");
 
 	`log("TOTALRAND: Storing current appearance in undo buffer.");
-	StoreAppearanceStateInUndoBuffer(bThisGeneratedAppearanceHasDLC1Arms);
+	StoreAppearanceStateInUndoBuffer();
 }
 
 simulated function bool HandleDLC1()
@@ -813,25 +784,29 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 	`log("");
 
 	`log("TOTALRAND: Storing current appearance in undo buffer.");
-	StoreAppearanceStateInUndoBuffer( class'RandomAppearanceButton_Utilities'.static.SoldierHasDLC1Arms(CustomizeMenuScreen) );
+	StoreAppearanceStateInUndoBuffer();
 
 	/*
-		Basically need to clear any/all extended stuff (e.g. props) so the result here doesn't look like it's fixed
-		and weird.
-
-		If you click the button and get a hat, that hat will persist through further clicks on the button...which
-		feels weird; so I clear the hat (and other props) then regen the chance to get one again.
+		The order here is important:
+		* Setting Race can override the face, so we set that first. (Gender trumps Race in this regard; trumps everything really.)
+		* Where DLC_1 is concerned, the DLC_1 torsos forbid the vanilla arms, so set THAT first, just incase.
 	*/
 
 	// For Sure do these.
-	RandomizeTrait(eUICustomizeCat_Face);
-	RandomizeTrait(eUICustomizeCat_Hairstyle);
-		
+	// If we DID randomize on gender, that would go here.
 	RandomizeTrait(eUICustomizeCat_Race);
 	RandomizeTrait(eUICustomizeCat_Skin);
 
-	RandomizeTrait(eUICustomizeCat_Arms);
+	RandomizeTrait(eUICustomizeCat_Face);
+	RandomizeTrait(eUICustomizeCat_Hairstyle);
+
 	RandomizeTrait(eUICustomizeCat_Torso);
+	if ( class'RandomAppearanceButton_Utilities'.static.SoldierHasDLC1Torso(CustomizeMenuScreen) ) {
+		RandomizeDLC1ArmSlots();
+	} else {
+		RandomizeTrait(eUICustomizeCat_Arms);
+	}
+	
 	RandomizeTrait(eUICustomizeCat_Legs);
 
 	/*
@@ -839,6 +814,12 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 
 		Optionals per the game's default soldier generator: facial hair and decorations, hat.
 		Optionals per me: armor and weapon patterns, tattoos, scars, face paint.
+
+		Basically need to clear any/all extended stuff so the result here doesn't look like it's fixed
+		and weird.
+
+		If you click the button and get a hat, that hat will persist through further clicks on the button...which
+		feels weird; so I clear the hat (and other props) then regen based on the chance to get one again.
 	*/
 	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_FacialHair,				RABConf_BeardChance);
 	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_FaceDecorationUpper,	RABConf_UpperFacePropChance);
@@ -885,7 +866,7 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 		for alterations via the normal UI
 	*/
 	`log("TOTALRAND: Storing current appearance in undo buffer (if it's not there already).");
-	StoreAppearanceStateInUndoBuffer(false); // Currently normal looking soldiers never get DLC_1 arms. They're spikey and weird, so.
+	StoreAppearanceStateInUndoBuffer(); // Currently normal looking soldiers never get DLC_1 arms. They're spikey and weird, so.
 }
 
 simulated function UndoAppearanceChanges(UIButton Button)
@@ -899,6 +880,14 @@ simulated function UndoAppearanceChanges(UIButton Button)
 	if (UndoBuffer.CanUndo())
 		UndoBuffer.Undo();
 
+	/*
+	Unless OnReceiveFocus starts working for colors, I can't reliably keep the button
+	state up-to-date. Right now, manual changes (via the UI) aren't trackable by me,
+	but I *can* undo them IF one of the buttons has already been pressed.
+
+	People will be annoyed that they can't just UNDO vanilla changes, but what can
+	ya do?
+
 	`log("RANDMAIN: Rechecking Undo (to set correct button color state).");
 	if (!UndoBuffer.CanUndo()) {
 		`log("RANDMAIN: Undo disabled.");
@@ -907,19 +896,26 @@ simulated function UndoAppearanceChanges(UIButton Button)
 		`log("RANDMAIN: Undo still good.");
 		UndoButtonLitUp();
 	}
+	*/
 
 	ResetTheCamera();
 }
 
-simulated function ResetAndConditionallyRandomizeTrait(EUICustomizeCategory Category, float ChanceToRandomize)
+simulated function  ResetAndRandomize(EUICustomizeCategory eCategory)
+{
+	SetTrait(eCategory, 0);
+	RandomizeTrait(eCategory);
+}
+
+simulated function ResetAndConditionallyRandomizeTrait(EUICustomizeCategory eCategory, float fChanceToRandomize)
 {
 	/*
 		Reset the trait to 0 then, if we're supposed to randomize it, do so.
 	*/
 
-	SetTrait(Category, 0);
-	if (RandomizeOrNotBasedOnRoll(ChanceToRandomize)) {
-		RandomizeTrait(Category);
+	SetTrait(eCategory, 0);
+	if (RandomizeOrNotBasedOnRoll(fChanceToRandomize)) {
+		RandomizeTrait(eCategory);
 	}
 }
 
