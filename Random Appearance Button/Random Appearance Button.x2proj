@@ -36,6 +36,9 @@
     <Content Include="Src\RandomAppearanceButton\Classes\RandomAppearanceButton_UndoBuffer.uc">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Src\RandomAppearanceButton\Classes\RandomAppearanceButton_Utilities.uc">
+      <SubType>Content</SubType>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildLocalExtensionPath)\XCOM2.targets" />
 </Project>
