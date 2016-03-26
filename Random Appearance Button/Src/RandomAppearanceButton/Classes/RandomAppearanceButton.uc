@@ -535,7 +535,7 @@ simulated function UncheckAll(UIButton Button)
 
 	for (iCategory = 0; iCategory < eUICustomizeCat_MAX; iCategory++) {
 		if (SoldierPropCheckboxes[iCategory] != none) {
-			SoldierPropCheckboxes[iCategory].Show();
+			SoldierPropCheckboxes[iCategory].SetChecked(false);
 		}
 	}
 
@@ -966,6 +966,10 @@ simulated function RandomizeTrait(EUICustomizeCategory eCategory, optional bool 
 					case EyeColors:
 						//`log(" * USING DEFAULT EYE COLORS.");
 						maxOptions = RABConf_DefaultEyeColors;
+						break;
+					case HairColors:
+						`log(" * USING DEFAULT HAIR COLORS.");
+						maxOptions = RABConf_DefaultHairColors;
 						break;
 				}
 

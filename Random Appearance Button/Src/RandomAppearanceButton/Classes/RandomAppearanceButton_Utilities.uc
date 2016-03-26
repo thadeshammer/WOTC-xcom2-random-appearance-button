@@ -1,4 +1,8 @@
 
+/*
+	static (non-instanced) helper functions
+*/
+
 class RandomAppearanceButton_Utilities extends Object;
 
 enum ECategoryType {
@@ -21,6 +25,11 @@ enum ECategoryType {
 
 simulated static function ECategoryType GetCategoryType(const out int iCategoryIndex)
 {
+	/*
+		This makes a LOT of required switch statements throughout the code
+		much easier to read.
+	*/
+
 	switch (iCategoryIndex)
 		{
 			/*
@@ -110,6 +119,18 @@ simulated static function ECategoryType GetCategoryType(const out int iCategoryI
 
 simulated static function int PropDirection(ECategoryType eCatType)
 {
+	/*
+		I still have no idea why OnCategoryValueChange() (the callback the UI uses
+		to change traits) requires "Direction" nor what "Direction" means or does.
+
+		Colors need a Direction of -1.
+
+		Non-color attributes need a Direction of 0.
+
+		It's 0 *most of the time* which is why the default option returns 0. Probably
+		this should throw an exception, but that's well outside of my abilities here.
+	*/
+
 	switch (eCatType) {
 		case eCategoryType_Prop:
 		case eCategoryType_Special:
@@ -122,12 +143,20 @@ simulated static function int PropDirection(ECategoryType eCatType)
 			break;
 
 		default:
-			return 1000;
+			return 0;
 	}
 }
 
 simulated static function string CategoryName(EUICustomizeCategory eCategory)
 {
+	/*
+		A helper function to make logging more readable. Takes a EUICustomizeCategory
+		enum and returns a shorter version by removing the prefix and leaving the
+		meaningful part.
+
+		E.G. "eUICustomizeCat_Torso" becomes "Torso"
+	*/
+
 	local string strPropName;
 
 	strPropName = string(eCategory);
@@ -191,7 +220,8 @@ simulated static function ResetTheCamera(UICustomize_Menu Screen)
 {
 	/*
 		Calling this with no args helps correct the camera, which
-		becomes weird (locked, zoomed) otherwise.
+		becomes weird (locked, zoomed) when I make changes and
+		don't call this.
 	*/
 
 	Screen.CustomizeManager.UpdateCamera();

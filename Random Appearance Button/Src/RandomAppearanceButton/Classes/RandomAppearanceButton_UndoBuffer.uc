@@ -322,12 +322,12 @@ simulated static function AppearanceState TakeAppearanceSnapshot(const out UICus
 				}
 
 				eCatIndex = EUICustomizeCategory(iCategoryIndex);
-
+				/*
 				if (iCategoryIndex >= eUICustomizeCat_LeftArm && iCategoryIndex <= eUICustomizeCat_RightArmDeco ||
 					iCategoryIndex == eUICustomizeCat_Arms ||
 					iCategoryIndex == eUICustomizeCat_Torso)
 					`log("   >" @ iTrait @ class'RandomAppearanceButton_Utilities'.static.CategoryName(eCatIndex) );
-
+				*/
 				CurrentState.Trait[iCategoryIndex] = iTrait;
 				break;
 
@@ -345,10 +345,10 @@ simulated static function AppearanceState TakeAppearanceSnapshot(const out UICus
 	*/
 	if (class'RandomAppearanceButton_Utilities'.static.SoldierHasDLC1Torso(Screen) || 
 		class'RandomAppearanceButton_Utilities'.static.SoldierHasDLC1Arms(Screen) ) {
-		`log("   > Has DLC1 components.");
+		//`log("   > Has DLC1 components.");
 		CurrentState.bHasDLC1components = true;
 	} else {
-		`log("   > Doesn't have DLC1 components.");
+		//`log("   > Doesn't have DLC1 components.");
 		CurrentState.bHasDLC1components = false;
 	}
 
@@ -394,11 +394,11 @@ simulated static function bool CompareAppearanceStates(const out AppearanceState
 	}
 
 	if (left.bHasDLC1components != right.bHasDLC1components) {
-		`log("UNDO BUFFER: DLC_1 components mismatch.");
+		//`log("UNDO BUFFER: DLC_1 components mismatch.");
 		return false;
-	} else {
-		`log("UNDO BUFFER: DLC_1 components match.");
-	}
+	} //else {
+	//	`log("UNDO BUFFER: DLC_1 components match.");
+	//}
 
 	`log("UNDO BUFFER: COMPARE: FULL MATCH.");
 	return true;
