@@ -609,13 +609,18 @@ simulated function GenerateTotallyRandomAppearance(UIButton Button)
 	`log("TOTALRAND: Storing current appearance in undo buffer (if it's not there already).");
 	StoreAppearanceStateInUndoBuffer();
 
+	/*
+		Order of trait application matters: gender first (which we don't roll for) then
+		race (which seems to matter sometimes).
+	*/
+
 	// Core customization menu
+	RandomizeTrait(eUICustomizeCat_Race,				true);
 	RandomizeTrait(eUICustomizeCat_Face,				true);
 	RandomizeTrait(eUICustomizeCat_Hairstyle,			true);
 	RandomizeTrait(eUICustomizeCat_FacialHair,			true);
 	RandomizeTrait(eUICustomizeCat_HairColor,			true);
-	RandomizeTrait(eUICustomizeCat_EyeColor,			true);
-	RandomizeTrait(eUICustomizeCat_Race,				true);
+	RandomizeTrait(eUICustomizeCat_EyeColor,			true);	
 	RandomizeTrait(eUICustomizeCat_Skin,				true);
 	RandomizeTrait(eUICustomizeCat_PrimaryArmorColor,	true);
 	RandomizeTrait(eUICustomizeCat_SecondaryArmorColor,	true);
@@ -795,8 +800,7 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 		* Where DLC_1 is concerned, the DLC_1 torsos forbid the vanilla arms, so set THAT first, just incase.
 	*/
 
-	// For Sure do these.
-	// If we DID randomize on gender, that would go here.
+	// --> If we DID randomize on gender, that would go here, as it goes first. <--
 	RandomizeTrait(eUICustomizeCat_Race);
 	RandomizeTrait(eUICustomizeCat_Skin);
 
@@ -805,8 +809,10 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 
 	RandomizeTrait(eUICustomizeCat_Torso);
 	if ( class'RandomAppearanceButton_Utilities'.static.SoldierHasDLC1Torso(CustomizeMenuScreen) ) {
+		// No choice, can't use vanilla arms with DLC_1 arms.
 		RandomizeDLC1ArmSlots();
 	} else {
+		// This is a "normal looking" soldier, so, we want vanilla arms.
 		RandomizeTrait(eUICustomizeCat_Arms);
 	}
 	
