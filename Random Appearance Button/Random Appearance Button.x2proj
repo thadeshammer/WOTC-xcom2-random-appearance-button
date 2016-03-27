@@ -18,9 +18,6 @@
     <Folder Include="Src\RandomAppearanceButton\Classes\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Config\Content.ini">
-      <SubType>Content</SubType>
-    </Content>
     <Content Include="Config\XComRandomAppearanceButton.ini">
       <SubType>Content</SubType>
     </Content>

@@ -55,7 +55,7 @@ var array<AppearanceState> Buffer;
 
 var UICustomize_Menu CustomizeMenuScreen;
 
-const MAX_UNDO_BUFFER_SIZE = 10;
+const MAX_UNDO_BUFFER_SIZE = 12;
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -499,6 +499,10 @@ simulated static function ApplyAppearanceSnapshot(const out UICustomize_Menu Scr
 		}
 
 	}
+
+	class'RandomAppearanceButton_Utilities'.static.UpdateScreenData(Screen);
+	class'RandomAppearanceButton_Utilities'.static.ResetCamera(Screen);
+
 }
 
 simulated function bool Undo()

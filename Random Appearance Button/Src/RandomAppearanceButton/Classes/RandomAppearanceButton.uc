@@ -238,14 +238,14 @@ simulated function InitOptionsPanel()
 		Buttons on the panel.
 	*/
 
-	ToggleGenderButton	= CreateButton('ToggleGender',				"Switch Gender",		ToggleGender,	AnchorPos, -230, CHECKBOX_OFFSET_Y - BUTTON_HEIGHT - BUTTON_SPACING); // xoffset prev -154
+	ToggleGenderButton											= CreateButton('ToggleGender',			"Switch Gender",	ToggleGender,	AnchorPos, -230, CHECKBOX_OFFSET_Y - BUTTON_HEIGHT - BUTTON_SPACING);
 	ToggleGenderButton.SetDisabled(false, "Changing gender will clear the undo buffer.");
 	ToggleGenderButton.Hide();
 
-	CheckAllButton	= CreateButton('CheckAll',					"All",					CheckAll,		class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -154, -207);
+	CheckAllButton												= CreateButton('CheckAll',				"All",					CheckAll,		class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -154, -207);
 	CheckAllButton.Hide();
 
-	UncheckAllButton = CreateButton('UncheckAll',				"Clear",				UncheckAll,		class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -305, -207);
+	UncheckAllButton											= CreateButton('UncheckAll',			"Clear",				UncheckAll,		class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -305, -207);
 	UncheckAllButton.Hide();
 
 	/*
@@ -609,13 +609,18 @@ simulated function GenerateTotallyRandomAppearance(UIButton Button)
 	`log("TOTALRAND: Storing current appearance in undo buffer (if it's not there already).");
 	StoreAppearanceStateInUndoBuffer();
 
+	/*
+		Order of trait application matters: gender first (which we don't roll for) then
+		race (which seems to matter sometimes).
+	*/
+
 	// Core customization menu
+	RandomizeTrait(eUICustomizeCat_Race,				true);
 	RandomizeTrait(eUICustomizeCat_Face,				true);
 	RandomizeTrait(eUICustomizeCat_Hairstyle,			true);
 	RandomizeTrait(eUICustomizeCat_FacialHair,			true);
 	RandomizeTrait(eUICustomizeCat_HairColor,			true);
-	RandomizeTrait(eUICustomizeCat_EyeColor,			true);
-	RandomizeTrait(eUICustomizeCat_Race,				true);
+	RandomizeTrait(eUICustomizeCat_EyeColor,			true);	
 	RandomizeTrait(eUICustomizeCat_Skin,				true);
 	RandomizeTrait(eUICustomizeCat_PrimaryArmorColor,	true);
 	RandomizeTrait(eUICustomizeCat_SecondaryArmorColor,	true);
@@ -647,6 +652,9 @@ simulated function GenerateTotallyRandomAppearance(UIButton Button)
 		RandomizeTrait(eUICustomizeCat_Arms,			true);
 	}
 	`log("DONE WITH ARMS.");
+
+	UpdateScreenData();
+	ResetCamera();
 
 	`log("TOTALRAND: Storing current appearance in undo buffer.");
 	StoreAppearanceStateInUndoBuffer();
@@ -792,8 +800,7 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 		* Where DLC_1 is concerned, the DLC_1 torsos forbid the vanilla arms, so set THAT first, just incase.
 	*/
 
-	// For Sure do these.
-	// If we DID randomize on gender, that would go here.
+	// --> If we DID randomize on gender, that would go here, as it goes first. <--
 	RandomizeTrait(eUICustomizeCat_Race);
 	RandomizeTrait(eUICustomizeCat_Skin);
 
@@ -802,8 +809,10 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 
 	RandomizeTrait(eUICustomizeCat_Torso);
 	if ( class'RandomAppearanceButton_Utilities'.static.SoldierHasDLC1Torso(CustomizeMenuScreen) ) {
+		// No choice, can't use vanilla arms with DLC_1 arms.
 		RandomizeDLC1ArmSlots();
 	} else {
+		// This is a "normal looking" soldier, so, we want vanilla arms.
 		RandomizeTrait(eUICustomizeCat_Arms);
 	}
 	
@@ -861,6 +870,9 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 		RandomizeTrait(eUICustomizeCat_EyeColor);
 	}
 
+	UpdateScreenData();
+	ResetCamera();
+
 	/*
 		Store the state we just created on the buffer as well. This is to support UNDO
 		for alterations via the normal UI
@@ -885,8 +897,9 @@ simulated function UndoAppearanceChanges(UIButton Button)
 	state up-to-date. Right now, manual changes (via the UI) aren't trackable by me,
 	but I *can* undo them IF one of the buttons has already been pressed.
 
-	People will be annoyed that they can't just UNDO vanilla changes, but what can
-	ya do?
+	If Firaxis fixes this, here's the breadcrumb to help me get back to a nice
+	Undo button that lights up and cools off when one can and can't undo, and even
+	tracks a counter of Undos in the buffer, as the prototype did.
 
 	`log("RANDMAIN: Rechecking Undo (to set correct button color state).");
 	if (!UndoBuffer.CanUndo()) {
@@ -897,8 +910,6 @@ simulated function UndoAppearanceChanges(UIButton Button)
 		UndoButtonLitUp();
 	}
 	*/
-
-	ResetTheCamera();
 }
 
 simulated function  ResetAndRandomize(EUICustomizeCategory eCategory)
@@ -995,7 +1006,6 @@ simulated function RandomizeTrait(EUICustomizeCategory eCategory, optional bool 
 		*/
 
 		SetTrait(eCategory, `SYNC_RAND(maxOptions));
-		ResetTheCamera();
 
 	} // endif (!bIsTraitLocked)
 }
@@ -1040,15 +1050,14 @@ simulated static function int GetTrait(UICustomize_Menu Screen, EUICustomizeCate
 	return Screen.CustomizeManager.GetCategoryIndex(eCategory);
 }
 
-private function ResetTheCamera()
+private function ResetCamera()
 {
 	/*
 		Calling this with no args helps correct the camera, which
 		becomes weird (locked, zoomed) otherwise.
 	*/
 
-	//CustomizeMenuScreen.CustomizeManager.UpdateCamera();
-	class'RandomAppearanceButton_Utilities'.static.ResetTheCamera(CustomizeMenuScreen);
+	class'RandomAppearanceButton_Utilities'.static.ResetCamera(CustomizeMenuScreen);
 }
 
 private function UpdateScreenData()
