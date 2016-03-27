@@ -499,6 +499,10 @@ simulated static function ApplyAppearanceSnapshot(const out UICustomize_Menu Scr
 		}
 
 	}
+
+	class'RandomAppearanceButton_Utilities'.static.UpdateScreenData(Screen);
+	class'RandomAppearanceButton_Utilities'.static.ResetCamera(Screen);
+
 }
 
 simulated function bool Undo()

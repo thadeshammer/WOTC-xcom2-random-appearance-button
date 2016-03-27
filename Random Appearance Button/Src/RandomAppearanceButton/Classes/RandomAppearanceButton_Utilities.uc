@@ -216,7 +216,7 @@ simulated static function bool SoldierHasDLC1Arms(UICustomize_Menu CustomizeMenu
 	}
 }
 
-simulated static function ResetTheCamera(UICustomize_Menu Screen)
+simulated static function ResetCamera(UICustomize_Menu Screen)
 {
 	/*
 		Calling this with no args helps correct the camera, which

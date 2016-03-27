@@ -649,7 +649,7 @@ simulated function GenerateTotallyRandomAppearance(UIButton Button)
 	`log("DONE WITH ARMS.");
 
 	UpdateScreenData();
-	ResetTheCamera();
+	ResetCamera();
 
 	`log("TOTALRAND: Storing current appearance in undo buffer.");
 	StoreAppearanceStateInUndoBuffer();
@@ -865,7 +865,7 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 	}
 
 	UpdateScreenData();
-	ResetTheCamera();
+	ResetCamera();
 
 	/*
 		Store the state we just created on the buffer as well. This is to support UNDO
@@ -1044,14 +1044,14 @@ simulated static function int GetTrait(UICustomize_Menu Screen, EUICustomizeCate
 	return Screen.CustomizeManager.GetCategoryIndex(eCategory);
 }
 
-private function ResetTheCamera()
+private function ResetCamera()
 {
 	/*
 		Calling this with no args helps correct the camera, which
 		becomes weird (locked, zoomed) otherwise.
 	*/
 
-	class'RandomAppearanceButton_Utilities'.static.ResetTheCamera(CustomizeMenuScreen);
+	class'RandomAppearanceButton_Utilities'.static.ResetCamera(CustomizeMenuScreen);
 }
 
 private function UpdateScreenData()
