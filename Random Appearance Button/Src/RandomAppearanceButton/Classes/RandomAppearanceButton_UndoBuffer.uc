@@ -55,7 +55,7 @@ var array<AppearanceState> Buffer;
 
 var UICustomize_Menu CustomizeMenuScreen;
 
-const MAX_UNDO_BUFFER_SIZE = 10;
+const MAX_UNDO_BUFFER_SIZE = 12;
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *

@@ -238,14 +238,14 @@ simulated function InitOptionsPanel()
 		Buttons on the panel.
 	*/
 
-	ToggleGenderButton	= CreateButton('ToggleGender',				"Switch Gender",		ToggleGender,	AnchorPos, -230, CHECKBOX_OFFSET_Y - BUTTON_HEIGHT - BUTTON_SPACING); // xoffset prev -154
+	ToggleGenderButton											= CreateButton('ToggleGender',			"Switch Gender",	ToggleGender,	AnchorPos, -230, CHECKBOX_OFFSET_Y - BUTTON_HEIGHT - BUTTON_SPACING);
 	ToggleGenderButton.SetDisabled(false, "Changing gender will clear the undo buffer.");
 	ToggleGenderButton.Hide();
 
-	CheckAllButton	= CreateButton('CheckAll',					"All",					CheckAll,		class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -154, -207);
+	CheckAllButton												= CreateButton('CheckAll',				"All",					CheckAll,		class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -154, -207);
 	CheckAllButton.Hide();
 
-	UncheckAllButton = CreateButton('UncheckAll',				"Clear",				UncheckAll,		class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -305, -207);
+	UncheckAllButton											= CreateButton('UncheckAll',			"Clear",				UncheckAll,		class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -305, -207);
 	UncheckAllButton.Hide();
 
 	/*
@@ -648,6 +648,9 @@ simulated function GenerateTotallyRandomAppearance(UIButton Button)
 	}
 	`log("DONE WITH ARMS.");
 
+	UpdateScreenData();
+	ResetTheCamera();
+
 	`log("TOTALRAND: Storing current appearance in undo buffer.");
 	StoreAppearanceStateInUndoBuffer();
 }
@@ -861,6 +864,9 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 		RandomizeTrait(eUICustomizeCat_EyeColor);
 	}
 
+	UpdateScreenData();
+	ResetTheCamera();
+
 	/*
 		Store the state we just created on the buffer as well. This is to support UNDO
 		for alterations via the normal UI
@@ -885,8 +891,9 @@ simulated function UndoAppearanceChanges(UIButton Button)
 	state up-to-date. Right now, manual changes (via the UI) aren't trackable by me,
 	but I *can* undo them IF one of the buttons has already been pressed.
 
-	People will be annoyed that they can't just UNDO vanilla changes, but what can
-	ya do?
+	If Firaxis fixes this, here's the breadcrumb to help me get back to a nice
+	Undo button that lights up and cools off when one can and can't undo, and even
+	tracks a counter of Undos in the buffer, as the prototype did.
 
 	`log("RANDMAIN: Rechecking Undo (to set correct button color state).");
 	if (!UndoBuffer.CanUndo()) {
@@ -897,8 +904,6 @@ simulated function UndoAppearanceChanges(UIButton Button)
 		UndoButtonLitUp();
 	}
 	*/
-
-	ResetTheCamera();
 }
 
 simulated function  ResetAndRandomize(EUICustomizeCategory eCategory)
@@ -995,7 +1000,6 @@ simulated function RandomizeTrait(EUICustomizeCategory eCategory, optional bool 
 		*/
 
 		SetTrait(eCategory, `SYNC_RAND(maxOptions));
-		ResetTheCamera();
 
 	} // endif (!bIsTraitLocked)
 }
@@ -1047,7 +1051,6 @@ private function ResetTheCamera()
 		becomes weird (locked, zoomed) otherwise.
 	*/
 
-	//CustomizeMenuScreen.CustomizeManager.UpdateCamera();
 	class'RandomAppearanceButton_Utilities'.static.ResetTheCamera(CustomizeMenuScreen);
 }
 
