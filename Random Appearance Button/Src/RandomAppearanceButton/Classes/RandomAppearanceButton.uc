@@ -113,11 +113,11 @@ var config int		RABConf_LowerFacePropLimit;
 var config float	RABConf_TotallyRandom_AnarchysChildrenArmsChance;
 
 enum EForceDefaultColorFlags {
-	NotForced,
-	ArmorColors,
-	WeaponColors,
-	HairColors,
-	EyeColors
+	eForceDefaultColorFlag_NotForced,
+	eForceDefaultColorFlag_ArmorColors,
+	eForceDefaultColorFlag_WeaponColors,
+	eForceDefaultColorFlag_HairColors,
+	eForceDefaultColorFlag_EyeColors
 };
 
 var array<UICheckBox>	SoldierPropCheckboxes;
@@ -227,7 +227,8 @@ simulated function InitOptionsPanel()
 
 	/*
 		This monolithic function is all in one piece as it makes things much
-		easier when I need to move checkboxes around relative to one another.
+		easier when I need to move UI elements (esp. checkboxes) around
+		relative to one another.
 	*/
 
 	SpawnOptionsBG();
@@ -347,7 +348,8 @@ simulated function ToggleChecklistVisiblity(UIButton Button)
 		This method only hides/unhides the checklist on the
 		button being pressed.
 
-		(Unused param is a UE3 thing: required for UIButton callback.)
+		(The unused UIButton param is a UE3 thing: required
+		for the UIButton callback.)
 	*/
 
 	BGBox.ToggleVisible();
@@ -493,7 +495,6 @@ simulated function UndoButtonGreyedOut()
 {
 	local string strLabel;
 
-	//strLabel = "Recall: 0";
 	strLabel = "Undo";
 
 	UndoButton.SetText(class'UIUtilities_Text'.static.GetColoredText(strLabel, eUIState_Disabled, BUTTON_LABEL_FONTSIZE));
@@ -503,7 +504,6 @@ simulated function UndoButtonLitUp()
 {
 	local string strLabel;
 
-	//strLabel = "Recall:" @ string(UndoBuffer.Buffer.Length);
 	strLabel = "Undo";
 
 	UndoButton.SetText(class'UIUtilities_Text'.static.GetColoredText(strLabel, eUIState_Normal, BUTTON_LABEL_FONTSIZE));
@@ -592,8 +592,6 @@ simulated function UIText CreateTextBox(name TextBoxName, string strText, int An
 
 simulated function GenerateTotallyRandomAppearance(UIButton Button)
 {
-	local bool bThisGeneratedAppearanceHasDLC1Arms;
-
 	/*
 		(Unused param is a UE3 thing: required for UIButton callback.)
 	*/
@@ -855,11 +853,11 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 	*/
 	if (RABConf_ForceDefaultColors)
 	{
-		RandomizeTrait(eUICustomizeCat_HairColor,				false, EForceDefaultColorFlags.HairColors);
-		RandomizeTrait(eUICustomizeCat_PrimaryArmorColor,		false, EForceDefaultColorFlags.ArmorColors);
-		RandomizeTrait(eUICustomizeCat_SecondaryArmorColor,		false, EForceDefaultColorFlags.ArmorColors);
-		RandomizeTrait(eUICustomizeCat_WeaponColor,				false, EForceDefaultColorFlags.WeaponColors);
-		RandomizeTrait(eUICustomizeCat_EyeColor,				false, EForceDefaultColorFlags.EyeColors);
+		RandomizeTrait(eUICustomizeCat_HairColor,				false, EForceDefaultColorFlags.eForceDefaultColorFlag_HairColors);
+		RandomizeTrait(eUICustomizeCat_PrimaryArmorColor,		false, EForceDefaultColorFlags.eForceDefaultColorFlag_ArmorColors);
+		RandomizeTrait(eUICustomizeCat_SecondaryArmorColor,		false, EForceDefaultColorFlags.eForceDefaultColorFlag_ArmorColors);
+		RandomizeTrait(eUICustomizeCat_WeaponColor,				false, EForceDefaultColorFlags.eForceDefaultColorFlag_WeaponColors);
+		RandomizeTrait(eUICustomizeCat_EyeColor,				false, EForceDefaultColorFlags.eForceDefaultColorFlag_EyeColors);
 	}
 	else
 	{
@@ -930,24 +928,24 @@ simulated function ResetAndConditionallyRandomizeTrait(EUICustomizeCategory eCat
 	}
 }
 
-simulated function RandomizeTrait(EUICustomizeCategory eCategory, optional bool bTotallyRandom = false,	optional EForceDefaultColorFlags eForceDefaultColor = NotForced)
+simulated function RandomizeTrait(EUICustomizeCategory eCategory, optional bool bTotallyRandom = false,	optional EForceDefaultColorFlags eForceDefaultColor = eForceDefaultColorFlag_NotForced)
 {
-	local array<string> options;
+	/*
+		The linchpin of the whole mod here, RandomizeTrait rolls a random trait out
+		of all the options for a given Customize Category, handles config around
+		default colors, then calls OnCategoryValueChange. Basically my mod acts as
+		if the player is clicking the UI, instead of changing the soldier directly,
+		allowing all the UI built-in safety checks to benefit my mod AND reducing
+		the number of classes I need to hook into by a pretty big number.
+	*/
+
 	local int			maxOptions;
-	local int			maxRange;
 	local int			iCategory;
 	local ECategoryType eCatType;
 	local int			iDirection;
-	local bool			bIsTraitLocked;
 
-	/*
-		I don't know what int direction does (mostly for lack of trying) but it's the 2nd param
-		for OnCategoryValue change and is different for colors (-1) from other parts (0).
-	*/
-
-	bIsTraitLocked = SoldierPropCheckboxes[eCategory].bChecked;
-
-	if (!bIsTraitLocked) {
+	if ( !IsTraitLocked(eCategory) )
+	{
 
 		iCategory = eCategory; // annoying caveat to UE3; casting inline doesn't work below
 		eCatType = class'RandomAppearanceButton_Utilities'.static.GetCategoryType(iCategory);
@@ -955,46 +953,12 @@ simulated function RandomizeTrait(EUICustomizeCategory eCategory, optional bool 
 
 		switch (iDirection) {
 			case 0:
-				options = CustomizeMenuScreen.CustomizeManager.GetCategoryList(eCategory);
-				maxOptions = options.Length;
+				maxOptions = GetMaxRangeForProp(eCategory, bTotallyRandom);
 				break;
 			case -1:
-
-				switch (eForceDefaultColor) {
-					case NotForced:
-						//`log(" * COLOR FREE FOR ALL.");
-						options = CustomizeMenuScreen.CustomizeManager.GetColorList(eCategory);
-						maxOptions = options.Length;
-						break;
-					case ArmorColors:
-						//`log(" * USING DEFAULT ARMOR COLORS.");
-						maxOptions = RABConf_DefaultArmorColors;
-						break;
-					case WeaponColors:
-						//`log(" * USING DEFAULT WEAPON COLORS.");
-						maxOptions = RABConf_DefaultWeaponColors;
-						break;
-					case EyeColors:
-						//`log(" * USING DEFAULT EYE COLORS.");
-						maxOptions = RABConf_DefaultEyeColors;
-						break;
-					case HairColors:
-						`log(" * USING DEFAULT HAIR COLORS.");
-						maxOptions = RABConf_DefaultHairColors;
-						break;
-				}
-
+				maxOptions = GetMaxRangeForColors(eCategory, bTotallyRandom, eForceDefaultColor);
 				break;
 		}
-	
-		if (!bTotallyRandom) {
-			maxRange = GetMaxRangeForProp(eCategory);
-
-			if (maxRange != -1 && maxOptions > maxRange)
-				maxOptions = maxRange;
-		}
-
-		//`log("--> number of options =" @ maxOptions);
 
 		/*
 
@@ -1005,9 +969,16 @@ simulated function RandomizeTrait(EUICustomizeCategory eCategory, optional bool 
 
 		*/
 
+		`log("RAB: maxOptions = " $ maxOptions);
+
 		SetTrait(eCategory, `SYNC_RAND(maxOptions));
 
 	} // endif (!bIsTraitLocked)
+}
+
+simulated function bool IsTraitLocked(EUICustomizeCategory eCategory)
+{
+	return SoldierPropCheckboxes[eCategory].bChecked;
 }
 
 simulated static function ForceSetTrait(UICustomize_Menu Screen, EUICustomizeCategory eCategory, int iSetting)
@@ -1031,14 +1002,9 @@ simulated static function ForceSetTrait(UICustomize_Menu Screen, EUICustomizeCat
 
 simulated function SetTrait(EUICustomizeCategory eCategory, int iTraitIndex)
 {
-	local bool bIsTraitLocked;
-
-	bIsTraitLocked = SoldierPropCheckboxes[eCategory].bChecked;
-
-	if (!bIsTraitLocked) {
+	if ( !IsTraitLocked(eCategory) ) {
 		ForceSetTrait(CustomizeMenuScreen, eCategory, iTraitIndex);
 	}
-
 }
 
 simulated static function int GetTrait(UICustomize_Menu Screen, EUICustomizeCategory eCategory)
@@ -1072,57 +1038,122 @@ private function UpdateScreenData()
 	class'RandomAppearanceButton_Utilities'.static.UpdateScreenData(CustomizeMenuScreen);
 }
 
-simulated function int GetMaxRangeForProp(EUICustomizeCategory eCategory)
+simulated function int GetMaxRangeForProp(EUICustomizeCategory eCategory, bool bTotallyRandom)
 {
 	/*
-		Get max range for given prop from config.
-
-		-1 means there's no limit.
+		The user can set a ceiling for prop selection in the config.
+		It's not complicated as, right now, most "reasonable" options are
+		lower in the list and the crazy ones are higher.
 	*/
 
-	local int maxRange;
-	local int gender;
+	local array<string>	options;
+	local int			maxOptions;
 
-	maxRange = -1;
+	local int			maxRangeFromConfig;
+	local int			gender;
+
+	gender = GetGender();
+	
+	options = CustomizeMenuScreen.CustomizeManager.GetCategoryList(eCategory);
+	maxOptions = options.Length;
+
+	/*
+		Check config
+	*/
 
 	switch (eCategory)
 	{
 		case eUICustomizeCat_Hairstyle:
-			// conditional on gender; want to avoid the "no gender" option so we're explicit.
-			gender = GetGender();
-
+			// conditional on gender; want to avoid the "no gender" enum which has no props, so we're explicit.
 			if (gender == eGender_Female)
-				return RABConf_HairRangeFemaleLimit;
+				maxRangeFromConfig = RABConf_HairRangeFemaleLimit;
 			else
-				return RABConf_HairRangeMaleLimit;
+				maxRangeFromConfig = RABConf_HairRangeMaleLimit;
 			break;
 
 		case eUICustomizeCat_Helmet:
-			maxRange = RABConf_HelmRangeLimit;
+			maxRangeFromConfig = RABConf_HelmRangeLimit;
 			break;
 
 		case eUICustomizeCat_Arms:
-			maxRange = RABConf_ArmsRangeLimit;
+			maxRangeFromConfig = RABConf_ArmsRangeLimit;
 			break;
 
 		case eUICustomizeCat_Legs:
-			maxRange = RABConf_LegsRangeLimit;
+			maxRangeFromConfig = RABConf_LegsRangeLimit;
 			break;
 
 		case eUICustomizeCat_Torso:
-			maxRange = RABConf_TorsoRangeLimit;
+			maxRangeFromConfig = RABConf_TorsoRangeLimit;
 			break;
 
 		case eUICustomizeCat_FaceDecorationUpper:
-			maxRange = RABConf_UpperFacePropLimit;
+			maxRangeFromConfig = RABConf_UpperFacePropLimit;
 			break;
 
 		case eUICustomizeCat_FaceDecorationLower:
-			maxRange = RABConf_LowerFacePropLimit;
+			maxRangeFromConfig = RABConf_LowerFacePropLimit;
 			break;
 	}
 
-	return maxRange;
+	/*
+		if (maxRangeFromConfig > maxOptions)
+			Then there's an error in the config, so we ignore it.
+	*/
+
+	if (maxOptions > maxRangeFromConfig && !bTotallyRandom)
+		maxOptions = maxRangeFromConfig;
+
+	return maxOptions;
+}
+
+simulated function int GetMaxRangeForColors(EUICustomizeCategory eCategory, bool bTotallyRandom, EForceDefaultColorFlags eForceDefaultColor)
+{
+	local array<string> options;
+	local int			maxOptions;
+
+	/*
+		The config allows the user to choose whether "reasonable looking" soldiers
+		are generated with or without restrictions on colors. Currently there's only
+		one setting (all or nothing) but it's probably a good idea (and not much work)
+		to make it such that the user can set it for each type of color individually.
+	*/
+
+	if (bTotallyRandom || eForceDefaultColor == eForceDefaultColorFlag_NotForced) {
+		/*
+			Currently bTotallyRandom and eForceDefaultColor never conflict, but
+			if I ever want to allow TotallyRandom to be constrained by the
+			default color flags, this will be necessary. (That's not planned
+			right now.)
+		*/
+
+		//`log(" * COLOR FREE FOR ALL.");
+		options = CustomizeMenuScreen.CustomizeManager.GetColorList(eCategory);
+		maxOptions = options.Length;
+	} else {
+
+		switch (eForceDefaultColor) {
+			case eForceDefaultColorFlag_ArmorColors:
+				//`log(" * USING DEFAULT ARMOR COLORS.");
+				maxOptions = RABConf_DefaultArmorColors;
+				break;
+			case eForceDefaultColorFlag_WeaponColors:
+				//`log(" * USING DEFAULT WEAPON COLORS.");
+				maxOptions = RABConf_DefaultWeaponColors;
+				break;
+			case eForceDefaultColorFlag_EyeColors:
+				//`log(" * USING DEFAULT EYE COLORS.");
+				maxOptions = RABConf_DefaultEyeColors;
+				break;
+			case eForceDefaultColorFlag_HairColors:
+				`log(" * USING DEFAULT HAIR COLORS.");
+				maxOptions = RABConf_DefaultHairColors;
+				break;
+		}
+
+	}
+
+	return maxOptions;
 }
 
 simulated function int GetGender()
