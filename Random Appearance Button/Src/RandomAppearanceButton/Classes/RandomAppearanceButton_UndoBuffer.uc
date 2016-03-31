@@ -25,6 +25,10 @@
 	proving difficult with the way things are now. (The race condition described
 	above kicks this right in the face.)
 
+	If they ever fix it such that the color picker does fire focus events as
+	we'd expect it to, then I can add the counter back to the Undo button
+	and keep it up to date.
+
 	TODO/BUGS
 
 	(FIXED) Sometimes undo gets stuck.

@@ -725,14 +725,7 @@ simulated function bool HandleDLC1()
 				//ForceSetTrait(CustomizeMenuScreen, eUICustomizeCat_Arms, -1);
 				bUsingDLC1Arms = true;
 				RandomizeDLC1ArmSlots();
-			} else {
-				// vanilla torsos are totally cool with DLC1 arms, so go to town
-
-				//ForceSetTrait(CustomizeMenuScreen, eUICustomizeCat_LeftArm, 0);
-				//ForceSetTrait(CustomizeMenuScreen, eUICustomizeCat_RightArm, 0);
-				//ForceSetTrait(CustomizeMenuScreen, eUICustomizeCat_LeftArmDeco, 0);
-				//ForceSetTrait(CustomizeMenuScreen, eUICustomizeCat_RightArmDeco, 0);
-			
+			} else {			
 				bUsingDLC1Arms = false;
 				RandomizeTrait(eUICustomizeCat_Arms, true);
 			
@@ -744,11 +737,7 @@ simulated function bool HandleDLC1()
 						of vanilla arms) some of the time and not all of the time. (See above for shoddy napkin math.)
 
 						The chance is set in the config file.
-
-						Since we're going to be getting DLC arms here, we set the arms to the "unset" or default position
-						of -1.
 					*/
-					//ForceSetTrait(CustomizeMenuScreen, eUICustomizeCat_Arms, -1);
 					bUsingDLC1Arms = true;
 					RandomizeDLC1ArmSlots();
 				}
