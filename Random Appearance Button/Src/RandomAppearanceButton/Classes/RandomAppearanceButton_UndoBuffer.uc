@@ -25,6 +25,10 @@
 	proving difficult with the way things are now. (The race condition described
 	above kicks this right in the face.)
 
+	If they ever fix it such that the color picker does fire focus events as
+	we'd expect it to, then I can add the counter back to the Undo button
+	and keep it up to date.
+
 	TODO/BUGS
 
 	(FIXED) Sometimes undo gets stuck.
@@ -52,10 +56,9 @@ struct AppearanceState {
 };
 
 var array<AppearanceState> Buffer;
+const MAX_UNDO_BUFFER_SIZE = 12;
 
 var UICustomize_Menu CustomizeMenuScreen;
-
-const MAX_UNDO_BUFFER_SIZE = 12;
 
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -291,7 +294,6 @@ simulated static function AppearanceState TakeAppearanceSnapshot(const out UICus
 	local AppearanceState			CurrentState;
 	local int						iTrait;
 	local int						iCategoryIndex;
-	local EUICustomizeCategory		eCatIndex;
 
 	/*
 		Populate CurrentState (take a "snapshot") of the appearance then return it.
@@ -320,9 +322,11 @@ simulated static function AppearanceState TakeAppearanceSnapshot(const out UICus
 
 					iTrait = 3;
 				}
+								
+				/*
+					Useful enough in debugging that I'm loathe to delete it until things have been stable longer.
 
 				eCatIndex = EUICustomizeCategory(iCategoryIndex);
-				/*
 				if (iCategoryIndex >= eUICustomizeCat_LeftArm && iCategoryIndex <= eUICustomizeCat_RightArmDeco ||
 					iCategoryIndex == eUICustomizeCat_Arms ||
 					iCategoryIndex == eUICustomizeCat_Torso)
@@ -345,10 +349,8 @@ simulated static function AppearanceState TakeAppearanceSnapshot(const out UICus
 	*/
 	if (class'RandomAppearanceButton_Utilities'.static.SoldierHasDLC1Torso(Screen) || 
 		class'RandomAppearanceButton_Utilities'.static.SoldierHasDLC1Arms(Screen) ) {
-		//`log("   > Has DLC1 components.");
 		CurrentState.bHasDLC1components = true;
 	} else {
-		//`log("   > Doesn't have DLC1 components.");
 		CurrentState.bHasDLC1components = false;
 	}
 
@@ -394,11 +396,8 @@ simulated static function bool CompareAppearanceStates(const out AppearanceState
 	}
 
 	if (left.bHasDLC1components != right.bHasDLC1components) {
-		//`log("UNDO BUFFER: DLC_1 components mismatch.");
 		return false;
-	} //else {
-	//	`log("UNDO BUFFER: DLC_1 components match.");
-	//}
+	}
 
 	`log("UNDO BUFFER: COMPARE: FULL MATCH.");
 	return true;
@@ -507,7 +506,7 @@ simulated static function ApplyAppearanceSnapshot(const out UICustomize_Menu Scr
 
 simulated function bool Undo()
 {
-	local AppearanceState		CurrentAppearance;
+	//local AppearanceState		CurrentAppearance;
 	local AppearanceState		BufferFront;
 
 	`log("");
@@ -562,14 +561,10 @@ simulated function bool Undo()
 	if ( !CanUndo() ) {
 		`log("UNDO BUFFER: Can't Undo.");
 		return false;
-	} /*else if ( Buffer.Length == 1 && NoChanges() ) { // is NoChanges() not working?
-		`log("UNDO BUFFER: Nothing to undo.");
-		return false;
-	}*/
+	} 
 
 	// local references to conform to further const out params in calls.
 	`log("UNDO BUFFER: Taking snapshot in Undo().");
-	CurrentAppearance = TakeAppearanceSnapshot(CustomizeMenuScreen);
 	`log("UNDO BUFFER: Getting front of buffer.");
 	BufferFront = GetFrontOfBuffer();
 
@@ -600,5 +595,5 @@ private static function int GetCategoryType(const out int iCategoryIndex)
 
 defaultproperties
 {
-
+	// Currently nothing here.
 }
