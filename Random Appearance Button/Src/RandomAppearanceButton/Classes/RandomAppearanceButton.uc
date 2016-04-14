@@ -168,6 +168,20 @@ delegate OnClickedDelegate(UIButton Button);
 
 							UIScreenListener Callbacks
 
+	Right now we can only count on OnInit.
+
+	The focus events don't fire for color pickers, limiting their use.
+	(I use them anyway in good faith they'll one day work as I wish.)
+	
+	OnRemove isn't required as I have no cleanup; as far as I've
+	gathered, Unreal's garbage collection vs. mods is sufficient.
+
+	NOTE. I could "sidechannel" this by setting up one or more other
+	UIScreenListeners perhaps: ones that wake up when color pickers are
+	noticed IF they count as screens. I'm not sure how else to do it;
+	other than, you know, hope Firaxis eventually makes color pickers
+	fire focus events.
+
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 event OnInit(UIScreen Screen)
@@ -203,12 +217,25 @@ simulated function OnLoseFocus(UIScreen Screen)
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-	
-	Spawn a new button/checkbox on the given screen with the given params.
+
+	Random Appearance Button UI code
+
+	Handles UI stuff particular to this mod.
+
+	NOTE.	There are times that I consider strongly moving this (and
+			the randomize code) out to support classes and turn this
+			class into a pure go-between. I may end up doing that if
+			I either find it facilitates compatibility with other mods
+			OR if I have a sudden glut of time.
 
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 simulated function InitRandomAppearanceButtonUI()
 {	
+	/*
+		Creates the lower panel of buttons below the checkbox UI.
+	*/
+
 	ToggleOptionsVisibilityButton		= CreateButton('RandomAppearanceToggle',	"Toggle Options",		ToggleChecklistVisiblity,				class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -150, -165);
 
 	UndoButton							= CreateButton('UndoButton',				"Undo",					UndoAppearanceChanges,					class'UIUtilities'.const.ANCHOR_BOTTOM_RIGHT, -303, -165);
@@ -465,7 +492,7 @@ simulated function ToggleGender(UIButton Button)
 		I subtract 1 from the enum in each case so I can continue changing stuff
 		via the UI hooks.
 
-		(Unused param is a UE3 thing: required for UIButton callback.)
+		(Unused UIButton param is a UE3 thing: required for UIButton callback.)
 	*/	
 	Unit = CustomizeMenuScreen.Movie.Pres.GetCustomizationUnit();
 
@@ -482,6 +509,8 @@ simulated function ToggleGender(UIButton Button)
 	StoreAppearanceStateInUndoBuffer(); 
 
 	ForceSetTrait(CustomizeMenuScreen, eUICustomizeCat_Gender, newGender);	
+
+	// No call to ResetCamera() here because it seems changing the gender does that for us.
 	UpdateScreenData();
 }
 
@@ -541,6 +570,13 @@ simulated function UncheckAll(UIButton Button)
 
 }
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+	Generic UI code: spawn buttons, backgrounds, etc. particular to my
+	Customization screen UI mods.
+
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 simulated function UIButton CreateButton(name ButtonName, string ButtonLabel,
 										delegate<OnClickedDelegate> OnClickCallThis, 
 										int AnchorPos, int XOffset, int YOffset)
@@ -587,6 +623,9 @@ simulated function UIText CreateTextBox(name TextBoxName, string strText, int An
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
 	Random Appearance code
+
+	Randomized trait setting code all lives here. Could be broken out
+	into a support class, given time.
 
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
@@ -1083,6 +1122,10 @@ simulated function int GetMaxRangeForProp(EUICustomizeCategory eCategory, bool b
 		case eUICustomizeCat_FaceDecorationLower:
 			maxRangeFromConfig = RABConf_LowerFacePropLimit;
 			break;
+
+		default:
+			maxRangeFromConfig = -1;
+			break;
 	}
 
 	/*
@@ -1090,7 +1133,7 @@ simulated function int GetMaxRangeForProp(EUICustomizeCategory eCategory, bool b
 			Then there's an error in the config, so we ignore it.
 	*/
 
-	if (maxOptions > maxRangeFromConfig && !bTotallyRandom)
+	if (maxRangeFromConfig > -1 && maxOptions > maxRangeFromConfig && !bTotallyRandom)
 		maxOptions = maxRangeFromConfig;
 
 	return maxOptions;
@@ -1101,6 +1144,9 @@ simulated function int GetMaxRangeForColors(EUICustomizeCategory eCategory, bool
 	local array<string> options;
 	local int			maxOptions;
 
+	options = CustomizeMenuScreen.CustomizeManager.GetColorList(eCategory);
+	maxOptions = options.Length;
+
 	/*
 		The config allows the user to choose whether "reasonable looking" soldiers
 		are generated with or without restrictions on colors. Currently there's only
@@ -1108,35 +1154,33 @@ simulated function int GetMaxRangeForColors(EUICustomizeCategory eCategory, bool
 		to make it such that the user can set it for each type of color individually.
 	*/
 
-	if (bTotallyRandom || eForceDefaultColor == eForceDefaultColorFlag_NotForced) {
-		/*
-			Currently bTotallyRandom and eForceDefaultColor never conflict, but
-			if I ever want to allow TotallyRandom to be constrained by the
-			default color flags, this will be necessary. (That's not planned
-			right now.)
-		*/
-
-		//`log(" * COLOR FREE FOR ALL.");
-		options = CustomizeMenuScreen.CustomizeManager.GetColorList(eCategory);
-		maxOptions = options.Length;
-	} else {
-
+	if (!bTotallyRandom)
+	{
 		switch (eForceDefaultColor) {
+
 			case eForceDefaultColorFlag_ArmorColors:
 				//`log(" * USING DEFAULT ARMOR COLORS.");
 				maxOptions = RABConf_DefaultArmorColors;
 				break;
+
 			case eForceDefaultColorFlag_WeaponColors:
 				//`log(" * USING DEFAULT WEAPON COLORS.");
 				maxOptions = RABConf_DefaultWeaponColors;
 				break;
+
 			case eForceDefaultColorFlag_EyeColors:
 				//`log(" * USING DEFAULT EYE COLORS.");
 				maxOptions = RABConf_DefaultEyeColors;
 				break;
+
 			case eForceDefaultColorFlag_HairColors:
 				`log(" * USING DEFAULT HAIR COLORS.");
 				maxOptions = RABConf_DefaultHairColors;
+				break;
+
+			case eForceDefaultColorFlag_NotForced:
+			default:
+				// Nothing to do here, maxOptions already correct per its init
 				break;
 		}
 
