@@ -48,7 +48,7 @@ simulated static function ECategoryType GetCategoryType(const out int iCategoryI
 				of 0. I'm not clear on why but that's how they're handled.
 			*/
 			case eUICustomizeCat_Face:
-			case eUICustomizeCat_Hairstyle:			
+			case eUICustomizeCat_Hairstyle:
 			case eUICustomizeCat_Arms:
 			case eUICustomizeCat_Torso:
 			case eUICustomizeCat_Legs:

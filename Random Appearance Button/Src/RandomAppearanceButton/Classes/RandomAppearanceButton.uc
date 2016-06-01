@@ -13,7 +13,7 @@
 	the UI. By request I added an Undo button as well.
 
 	TODO.
-	
+
 	Add a lot more configuration to the INI (e.g. allow all options to be assigned
 	their own % chance for both buttons, maybe even allow the buttons to be renamed
 	by the user which I'll need to at least cap at a certain length).
@@ -172,7 +172,7 @@ delegate OnClickedDelegate(UIButton Button);
 
 	The focus events don't fire for color pickers, limiting their use.
 	(I use them anyway in good faith they'll one day work as I wish.)
-	
+
 	OnRemove isn't required as I have no cleanup; as far as I've
 	gathered, Unreal's garbage collection vs. mods is sufficient.
 
@@ -185,7 +185,7 @@ delegate OnClickedDelegate(UIButton Button);
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 event OnInit(UIScreen Screen)
-{	
+{
 	CustomizeMenuScreen = UICustomize_Menu(Screen);
 	if (CustomizeMenuScreen == none)
 		return;
@@ -216,6 +216,24 @@ simulated function OnLoseFocus(UIScreen Screen)
 	HideUI();
 }
 
+event onRemoved(UIScreen Screen)
+{
+	// Trigger garbage collection.
+	UndoBuffer = none;
+
+	BGBox.Destroy();
+	RandomAppearanceButton.Destroy();
+	TotallyRandomButton.Destroy();
+	ToggleOptionsVisibilityButton.Destroy();
+	UndoButton.Destroy();
+	ToggleGenderButton.Destroy();
+	CheckAllButton.Destroy();
+	UncheckAllButton.Destroy();
+	AttribLocksTitle.Destroy();
+	WearablesLocksTitle.Destroy();
+	WearablesColorsLocksTitles.Destroy();
+}
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
 	Random Appearance Button UI code
@@ -231,7 +249,7 @@ simulated function OnLoseFocus(UIScreen Screen)
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 simulated function InitRandomAppearanceButtonUI()
-{	
+{
 	/*
 		Creates the lower panel of buttons below the checkbox UI.
 	*/
@@ -301,7 +319,7 @@ simulated function InitOptionsPanel()
 	SoldierPropCheckboxes[eUICustomizeCat_LeftArmTattoos]		= CreateCheckbox('Lock_LeftTattoo',		"Tattoos: L/R",			AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, PanelYShiftDownFrom(SoldierPropCheckboxes[eUICustomizeCat_EyeColor]));
 	SoldierPropCheckboxes[eUICustomizeCat_RightArmTattoos]		= CreateCheckbox('Lock_RightTattoo',	"",						AnchorPos, CHECKBOX_OFFSET_X, SoldierPropCheckboxes[eUICustomizeCat_LeftArmTattoos].Y);
 	SoldierPropCheckboxes[eUICustomizeCat_TattooColor]			= CreateCheckbox('Lock_TattooColor',	"Tattoo Color",			AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, PanelYShiftDownFrom(SoldierPropCheckboxes[eUICustomizeCat_LeftArmTattoos]));
-	
+
 	/*
 		Wearables
 	*/
@@ -313,15 +331,15 @@ simulated function InitOptionsPanel()
 	SoldierPropCheckboxes[eUICustomizeCat_FaceDecorationLower]	= CreateCheckbox('Lock_LowerFace',		"",						AnchorPos, CHECKBOX_OFFSET_X, SoldierPropCheckboxes[eUICustomizeCat_FaceDecorationUpper].Y);
 
 	SoldierPropCheckboxes[eUICustomizeCat_Arms]					= CreateCheckbox('Lock_Arms',			"Arms Primary",			AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, PanelYShiftDownFrom(SoldierPropCheckboxes[eUICustomizeCat_FaceDecorationUpper]));
-	
+
 	if (isDLC_1_Installed) {
 		/*
 			If DLC1 is installed, we need these checkboxes and to draw subsequent checkboxes relative to them.
 		*/
 
 		SoldierPropCheckboxes[eUICustomizeCat_LeftArm]			= CreateCheckbox('Lock_LeftArmLower',	"Left Arm/Deco",		AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, PanelYShiftDownFrom(SoldierPropCheckboxes[eUICustomizeCat_Arms]));
-		SoldierPropCheckboxes[eUICustomizeCat_LeftArmDeco]		= CreateCheckbox('Lock_LeftArmUpper',	"",						AnchorPos, CHECKBOX_OFFSET_X, SoldierPropCheckboxes[eUICustomizeCat_LeftArm].Y);			
-		
+		SoldierPropCheckboxes[eUICustomizeCat_LeftArmDeco]		= CreateCheckbox('Lock_LeftArmUpper',	"",						AnchorPos, CHECKBOX_OFFSET_X, SoldierPropCheckboxes[eUICustomizeCat_LeftArm].Y);
+
 		SoldierPropCheckboxes[eUICustomizeCat_RightArm]			= CreateCheckbox('Lock_RightArmLower',	"Right Arm/Deco",		AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, PanelYShiftDownFrom(SoldierPropCheckboxes[eUICustomizeCat_LeftArm]));
 		SoldierPropCheckboxes[eUICustomizeCat_RightArmDeco]		= CreateCheckbox('Lock_RightArmUpper',	"",						AnchorPos, CHECKBOX_OFFSET_X, SoldierPropCheckboxes[eUICustomizeCat_RightArm].Y);
 
@@ -333,7 +351,7 @@ simulated function InitOptionsPanel()
 
 		DLCCheckboxYAdjust = SoldierPropCheckboxes[eUICustomizeCat_Arms].Y + SoldierPropCheckboxes[eUICustomizeCat_Arms].Height + BUTTON_SPACING;
 	}
-	
+
 	SoldierPropCheckboxes[eUICustomizeCat_Torso]				= CreateCheckbox('Lock_Torso',			"Torso",				AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, DLCCheckboxYAdjust);
 	SoldierPropCheckboxes[eUICustomizeCat_Legs]					= CreateCheckbox('Lock_Legs',			"Legs",					AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, PanelYShiftDownFrom(SoldierPropCheckboxes[eUICustomizeCat_Torso]));
 
@@ -346,7 +364,7 @@ simulated function InitOptionsPanel()
 	SoldierPropCheckboxes[eUICustomizeCat_PrimaryArmorColor]	= CreateCheckbox('Lock_MainColor',		"Armor Color 1/2",		AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, PanelYShiftDownFrom(SoldierPropCheckboxes[eUICustomizeCat_ArmorPatterns]));
 	SoldierPropCheckboxes[eUICustomizeCat_SecondaryArmorColor]	= CreateCheckbox('Lock_SecondaryColor',	"",						AnchorPos, CHECKBOX_OFFSET_X, SoldierPropCheckboxes[eUICustomizeCat_PrimaryArmorColor].Y);
 
-	SoldierPropCheckboxes[eUICustomizeCat_WeaponPatterns]		= CreateCheckbox('Lock_WeaponPattern',	"Weapon Pattern",		AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, PanelYShiftDownFrom(SoldierPropCheckboxes[eUICustomizeCat_PrimaryArmorColor]));	
+	SoldierPropCheckboxes[eUICustomizeCat_WeaponPatterns]		= CreateCheckbox('Lock_WeaponPattern',	"Weapon Pattern",		AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, PanelYShiftDownFrom(SoldierPropCheckboxes[eUICustomizeCat_PrimaryArmorColor]));
 	SoldierPropCheckboxes[eUICustomizeCat_WeaponColor]			= CreateCheckbox('Lock_WeaponColor',	"Weapon Color",			AnchorPos, CHECKBOX_OFFSET_X - CHECKBOX_NEIGHBOR_OFFSET, PanelYShiftDownFrom(SoldierPropCheckboxes[eUICustomizeCat_WeaponPatterns]));
 }
 
@@ -385,7 +403,7 @@ simulated function ToggleChecklistVisiblity(UIButton Button)
 	AttribLocksTitle.ToggleVisible();
 	WearablesLocksTitle.ToggleVisible();
 	WearablesColorsLocksTitles.ToggleVisible();
-	
+
 
 	for (iCategory = 0; iCategory < eUICustomizeCat_MAX; iCategory++) {
 		if (SoldierPropCheckboxes[iCategory] != none) {
@@ -493,7 +511,7 @@ simulated function ToggleGender(UIButton Button)
 		via the UI hooks.
 
 		(Unused UIButton param is a UE3 thing: required for UIButton callback.)
-	*/	
+	*/
 	Unit = CustomizeMenuScreen.Movie.Pres.GetCustomizationUnit();
 
 	if (Unit.kAppearance.iGender == eGender_Female) {
@@ -506,9 +524,9 @@ simulated function ToggleGender(UIButton Button)
 		Count this as a state change so UNDO can handle it.
 	*/
 
-	StoreAppearanceStateInUndoBuffer(); 
+	StoreAppearanceStateInUndoBuffer();
 
-	ForceSetTrait(CustomizeMenuScreen, eUICustomizeCat_Gender, newGender);	
+	ForceSetTrait(CustomizeMenuScreen, eUICustomizeCat_Gender, newGender);
 
 	// No call to ResetCamera() here because it seems changing the gender does that for us.
 	UpdateScreenData();
@@ -578,32 +596,32 @@ simulated function UncheckAll(UIButton Button)
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 simulated function UIButton CreateButton(name ButtonName, string ButtonLabel,
-										delegate<OnClickedDelegate> OnClickCallThis, 
+										delegate<OnClickedDelegate> OnClickCallThis,
 										int AnchorPos, int XOffset, int YOffset)
 {
 	local UIButton  NewButton;
-	
+
 	NewButton = CustomizeMenuScreen.Spawn(class'UIButton', CustomizeMenuScreen);
 	NewButton.InitButton(ButtonName, class'UIUtilities_Text'.static.GetSizedText(ButtonLabel, BUTTON_LABEL_FONTSIZE), OnClickCallThis);
 	NewButton.SetAnchor(AnchorPos);
 	NewButton.SetPosition(XOffset, YOffset);
 	NewButton.SetSize(NewButton.Width, BUTTON_HEIGHT);
-	
+
 	return NewButton;
 }
 
-simulated function UICheckbox CreateCheckbox(name CheckboxName, string CheckboxLabel, 
+simulated function UICheckbox CreateCheckbox(name CheckboxName, string CheckboxLabel,
 											 int AnchorPos, int XOffset, int YOffset)
 {
 	local UICheckbox  NewCheckbox;
-	
+
 	NewCheckbox = CustomizeMenuScreen.Spawn(class'UICheckbox', CustomizeMenuScreen);
 	NewCheckbox.InitCheckbox(CheckboxName, CheckboxLabel);
 	NewCheckbox.SetAnchor(AnchorPos);
 	NewCheckbox.SetPosition(XOffset, YOffset);
 	NewCheckbox.SetSize(NewCheckbox.Width, BUTTON_HEIGHT);
 	NewCheckbox.Hide();
-	
+
 	return NewCheckbox;
 }
 
@@ -642,7 +660,7 @@ simulated function GenerateTotallyRandomAppearance(UIButton Button)
 	`log("");
 	`log("* * * * * * * * * * * * * * * * * * * * * * * * *");
 	`log("");
-	
+
 	`log("TOTALRAND: Storing current appearance in undo buffer (if it's not there already).");
 	StoreAppearanceStateInUndoBuffer();
 
@@ -657,7 +675,7 @@ simulated function GenerateTotallyRandomAppearance(UIButton Button)
 	RandomizeTrait(eUICustomizeCat_Hairstyle,			true);
 	RandomizeTrait(eUICustomizeCat_FacialHair,			true);
 	RandomizeTrait(eUICustomizeCat_HairColor,			true);
-	RandomizeTrait(eUICustomizeCat_EyeColor,			true);	
+	RandomizeTrait(eUICustomizeCat_EyeColor,			true);
 	RandomizeTrait(eUICustomizeCat_Skin,				true);
 	RandomizeTrait(eUICustomizeCat_PrimaryArmorColor,	true);
 	RandomizeTrait(eUICustomizeCat_SecondaryArmorColor,	true);
@@ -666,7 +684,7 @@ simulated function GenerateTotallyRandomAppearance(UIButton Button)
 	// customize props menu
 	RandomizeTrait(eUICustomizeCat_FaceDecorationUpper,	true);
 	RandomizeTrait(eUICustomizeCat_FaceDecorationLower,	true);
-	RandomizeTrait(eUICustomizeCat_Helmet,				true);	
+	RandomizeTrait(eUICustomizeCat_Helmet,				true);
 	RandomizeTrait(eUICustomizeCat_Torso,				true);
 	RandomizeTrait(eUICustomizeCat_Legs,				true);
 	RandomizeTrait(eUICustomizeCat_ArmorPatterns,		true);
@@ -703,7 +721,7 @@ simulated function bool HandleDLC1()
 
 	/*
 		If the primary arms are locked then we don't do this at all.
-			
+
 		If primary arms are NOT locked AND one or more of the arm slots are locked, then
 		we roll for random arm elements every time.
 
@@ -722,7 +740,7 @@ simulated function bool HandleDLC1()
 
 		In short: if anything is locked, then we don't want to bother with the % chance of arm
 		component, because there's never a case where they'll be locked and we don't want to roll
-		one. If NONE of them are locked, then we constrain based on chance.	
+		one. If NONE of them are locked, then we constrain based on chance.
 	*/
 
 	// if	(SoldierPropsLocks.Arms.bChecked) then DON'T DO ANYTHING
@@ -764,10 +782,10 @@ simulated function bool HandleDLC1()
 				//ForceSetTrait(CustomizeMenuScreen, eUICustomizeCat_Arms, -1);
 				bUsingDLC1Arms = true;
 				RandomizeDLC1ArmSlots();
-			} else {			
+			} else {
 				bUsingDLC1Arms = false;
 				RandomizeTrait(eUICustomizeCat_Arms, true);
-			
+
 				if (RandomizeOrNotBasedOnRoll(RABConf_TotallyRandom_AnarchysChildrenArmsChance)) {
 
 					/*
@@ -780,9 +798,9 @@ simulated function bool HandleDLC1()
 					bUsingDLC1Arms = true;
 					RandomizeDLC1ArmSlots();
 				}
-			}			
+			}
 		}
-		
+
 	} else {
 
 	/*
@@ -841,7 +859,7 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 		// This is a "normal looking" soldier, so, we want vanilla arms.
 		RandomizeTrait(eUICustomizeCat_Arms);
 	}
-	
+
 	RandomizeTrait(eUICustomizeCat_Legs);
 
 	/*
@@ -875,7 +893,7 @@ simulated function GenerateNormalLookingRandomAppearance(UIButton Button)
 
 	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_LeftArmTattoos,			RABConf_TattoosChance);
 	ResetAndConditionallyRandomizeTrait(eUICustomizeCat_RightArmTattoos,		RABConf_TattoosChance);
-	
+
 	/*
 		Colors!
 	*/
@@ -938,7 +956,7 @@ simulated function UndoAppearanceChanges(UIButton Button)
 	*/
 }
 
-simulated function  ResetAndRandomize(EUICustomizeCategory eCategory)
+simulated function ResetAndRandomize(EUICustomizeCategory eCategory)
 {
 	SetTrait(eCategory, 0);
 	RandomizeTrait(eCategory);
@@ -1081,7 +1099,7 @@ simulated function int GetMaxRangeForProp(EUICustomizeCategory eCategory, bool b
 	local int			gender;
 
 	gender = GetGender();
-	
+
 	options = CustomizeMenuScreen.CustomizeManager.GetCategoryList(eCategory);
 	maxOptions = options.Length;
 

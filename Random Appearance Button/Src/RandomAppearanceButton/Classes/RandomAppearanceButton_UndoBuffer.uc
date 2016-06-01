@@ -264,7 +264,7 @@ simulated function StoreCurrentState()
 	/*
 		We only want to store the current state if it's NOT identical to the
 		one already at the front of the buffer.
-		
+
 		If they're different, store it.
 
 		If there's an identical state already on the buffer, we don't want to
@@ -322,7 +322,7 @@ simulated static function AppearanceState TakeAppearanceSnapshot(const out UICus
 
 					iTrait = 3;
 				}
-								
+
 				/*
 					Useful enough in debugging that I'm loathe to delete it until things have been stable longer.
 
@@ -347,7 +347,7 @@ simulated static function AppearanceState TakeAppearanceSnapshot(const out UICus
 		This will probably negate the need for the button presses
 		to track this stuff.
 	*/
-	if (class'RandomAppearanceButton_Utilities'.static.SoldierHasDLC1Torso(Screen) || 
+	if (class'RandomAppearanceButton_Utilities'.static.SoldierHasDLC1Torso(Screen) ||
 		class'RandomAppearanceButton_Utilities'.static.SoldierHasDLC1Arms(Screen) ) {
 		CurrentState.bHasDLC1components = true;
 	} else {
@@ -492,7 +492,7 @@ simulated static function ApplyAppearanceSnapshot(const out UICustomize_Menu Scr
 				break;
 
 		}
-		
+
 		if (!bSkipThisTrait) {
 			class'RandomAppearanceButton'.static.ForceSetTrait(Screen, EUICustomizeCategory(iCategoryIndex), iTrait);
 		}
@@ -533,7 +533,7 @@ simulated function bool Undo()
 
 		[A][B]
 
-		(2) The user has changed the hair color manually, so we have a THIRD 
+		(2) The user has changed the hair color manually, so we have a THIRD
 		UNTRACKED state (lower case reflects untracked/not in the buffer).
 
 		[c]
@@ -561,7 +561,7 @@ simulated function bool Undo()
 	if ( !CanUndo() ) {
 		`log("UNDO BUFFER: Can't Undo.");
 		return false;
-	} 
+	}
 
 	// local references to conform to further const out params in calls.
 	`log("UNDO BUFFER: Taking snapshot in Undo().");
