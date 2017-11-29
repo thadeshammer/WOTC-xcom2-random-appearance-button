@@ -62,6 +62,15 @@ simulated static function ECategoryType GetCategoryType(const out int iCategoryI
             case eUICustomizeCat_FacePaint:
             case eUICustomizeCat_LeftArmTattoos:
             case eUICustomizeCat_RightArmTattoos:
+            case eUICustomizeCat_LeftArm:
+            case eUICustomizeCat_RightArm:
+            case eUICustomizeCat_LeftArmDeco:
+            case eUICustomizeCat_RightArmDeco:
+            case eUICustomizeCat_LeftForearm:
+            case eUICustomizeCat_RightForearm:
+            case eUICustomizeCat_Thighs:
+            case eUICustomizeCat_Shins:
+            case eUICustomizeCat_TorsoDeco:
                 return eCategoryType_Prop;
                 break;
 
